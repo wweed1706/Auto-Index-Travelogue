@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import TripCardPlaceholder from './TripCardPlaceholder';
 import { History, Sparkles } from './Icons';
 
@@ -7,6 +8,7 @@ import { History, Sparkles } from './Icons';
  * Lưới (Grid) hiển thị 3 khối trống (Card placeholder) đại diện cho các chuyến đi gần đây.
  */
 const RecentTripsGrid = ({ onAddTrip }) => {
+  const navigate = useNavigate();
   const placeholders = [1, 2, 3];
 
   return (
@@ -27,13 +29,15 @@ const RecentTripsGrid = ({ onAddTrip }) => {
           </p>
         </div>
 
-        <button 
-          onClick={onAddTrip}
-          className="text-xs sm:text-sm font-semibold text-sky-600 hover:text-sky-700 hover:underline transition-colors flex items-center gap-1"
-        >
-          <span>Xem tất cả</span>
-          <span>→</span>
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => navigate('/journey-preview')}
+            className="text-xs sm:text-sm font-semibold px-3 py-1.5 rounded-xl bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors flex items-center gap-1.5 border border-teal-200 shadow-sm"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+            <span>Xem chuyến đi mẫu (Đà Lạt)</span>
+          </button>
+        </div>
       </div>
 
       {/* Grid of 3 Trip Placeholders */}
@@ -42,7 +46,7 @@ const RecentTripsGrid = ({ onAddTrip }) => {
           <TripCardPlaceholder 
             key={num} 
             index={num} 
-            onClick={onAddTrip} 
+            onClick={num === 1 ? () => navigate('/journey-preview') : onAddTrip} 
           />
         ))}
       </div>
