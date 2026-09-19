@@ -83,9 +83,14 @@ const Dashboard = () => {
           </section>
         </main>
 
-        {/* Footer */}
-        <footer className="border-t border-slate-200/70 py-6 px-4 sm:px-8 text-center text-xs text-slate-400">
+        {/* Footer (Chiều cao chuẩn h-[72px] đồng bộ tuyệt đối với chân Sidebar) */}
+        <footer className="h-[72px] border-t border-slate-200/80 px-6 sm:px-8 flex items-center justify-between text-xs text-slate-400 shrink-0 bg-slate-50">
           <p>© {new Date().getFullYear()} Auto-Index Travelogue. Hệ thống quản lý và lập chỉ mục chuyến đi tự động.</p>
+          <div className="hidden sm:flex items-center gap-4 text-[11px] text-slate-400">
+            <span>Phiên bản v1.0</span>
+            <span>•</span>
+            <span>Bảo mật dữ liệu</span>
+          </div>
         </footer>
       </div>
 
