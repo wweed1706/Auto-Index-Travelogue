@@ -1,110 +1,103 @@
 import React, { useState, useRef } from 'react';
-import { Plus, UploadCloud, Sparkles, CheckCircle } from './Icons';
+import { Plus, Sparkles, UploadCloud } from './Icons';
 
 /**
- * CreateJourneyCTA Component
- * Khu vực lớn nổi bật ở giữa màn hình khuyến khích người dùng tạo chuyến đi mới và tải lên ảnh/ký sự.
+ * CreateJourneyCTA Component (Module 1 - Auto-Index)
+ * - Nút primary lớn "+ Tạo chuyến đi mới (Create Journey)"
+ * - Hỗ trợ kéo thả file trực tiếp vào khối banner để kích hoạt UploadModal
+ * - Sử dụng dragCounter và pointer-events-none để khắc phục triệt để lỗi nhấp nháy (flicker)
  */
-const CreateJourneyCTA = () => {
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadSuccess, setUploadSuccess] = useState(false);
-  const fileInputRef = useRef(null);
+const CreateJourneyCTA = ({ onOpenUploadModal }) => {
+  const [isDragging, setIsDragging] = useState(false);
+  const dragCounter = useRef(0);
 
-  const handleCreateJourneyClick = () => {
-    if (fileInputRef.current) {
-      fileInputRef.current.click();
+  const handleDragEnter = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current += 1;
+    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
+      setIsDragging(true);
     }
   };
 
-  const handleFileChange = (e) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      setIsUploading(true);
-      // Giả lập tiến trình upload
-      setTimeout(() => {
-        setIsUploading(false);
-        setUploadSuccess(true);
-        setTimeout(() => setUploadSuccess(false), 4000);
-      }, 1500);
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current -= 1;
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0;
+      setIsDragging(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    dragCounter.current = 0;
+    setIsDragging(false);
+    if (onOpenUploadModal) {
+      onOpenUploadModal();
     }
   };
 
   return (
-    <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-sky-500 via-teal-500 to-emerald-600 text-white shadow-xl shadow-teal-500/10 p-6 sm:p-10 transition-all duration-300">
+    <div 
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`
+        relative overflow-hidden rounded-3xl text-white p-6 sm:p-9 transition-all duration-300
+        bg-gradient-to-br from-sky-500 via-teal-500 to-emerald-600 shadow-xl shadow-teal-500/10
+        ${isDragging ? 'ring-4 ring-white/70 scale-[1.01] shadow-2xl' : ''}
+      `}
+    >
       {/* Decorative Background Elements */}
       <div className="absolute top-0 right-0 -mr-16 -mt-16 w-64 h-64 rounded-full bg-white/10 blur-2xl pointer-events-none" />
       <div className="absolute bottom-0 left-1/3 -mb-20 w-80 h-80 rounded-full bg-emerald-400/20 blur-3xl pointer-events-none" />
 
-      {/* Hidden file input for upload feature */}
-      <input 
-        type="file" 
-        ref={fileInputRef} 
-        onChange={handleFileChange} 
-        multiple 
-        accept="image/*,.gpx,.kml" 
-        className="hidden" 
-      />
+      {/* Drag Overlay Hint khi kéo file qua - Bắt buộc dùng pointer-events-none để chống chớp nháy */}
+      {isDragging && (
+        <div className="absolute inset-0 z-20 pointer-events-none bg-teal-900/60 backdrop-blur-xs flex flex-col items-center justify-center text-white border-2 border-dashed border-white m-3 rounded-2xl animate-in fade-in">
+          <UploadCloud className="w-12 h-12 mb-2 animate-bounce" />
+          <p className="font-bold text-lg">Thả tệp vào đây để mở tải lên!</p>
+        </div>
+      )}
 
       <div className="relative z-10 max-w-2xl">
-        {/* Badge */}
-        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-xs font-semibold tracking-wide uppercase mb-4 text-sky-100">
+        {/* Module Badge */}
+        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-xs font-semibold tracking-wide uppercase mb-3 text-sky-100">
           <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-          <span>Hệ thống Tự động Lập chỉ mục Thông minh</span>
+          <span>Module 1 • Auto-Index Travelogue</span>
         </div>
 
         {/* Title */}
-        <h3 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight text-white mb-3 leading-tight">
+        <h3 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-2.5 leading-tight">
           Bắt đầu Hành trình Mới của bạn
         </h3>
 
         {/* Description */}
-        <p className="text-sm sm:text-base text-sky-100/90 leading-relaxed mb-8">
-          Tải lên ảnh chụp, dữ liệu GPS hoặc nhật ký hành trình. Auto-Index Travelogue sẽ tự động sắp xếp theo thời gian và địa điểm với độ chính xác cao.
+        <p className="text-xs sm:text-sm text-sky-100/90 leading-relaxed mb-6 max-w-xl">
+          Tải lên ảnh chụp hoặc tệp tọa độ. Hệ thống sẽ tự động lập chỉ mục thời gian, địa danh và kỷ niệm cho chuyến đi của bạn.
         </p>
 
-        {/* Action Buttons */}
-        <div className="flex flex-wrap items-center gap-4">
+        {/* Nút Primary Lớn: + Tạo chuyến đi mới (Create Journey) */}
+        <div>
           <button
-            onClick={handleCreateJourneyClick}
-            disabled={isUploading}
-            className={`
-              inline-flex items-center gap-3 px-6 py-3.5 rounded-2xl font-bold text-sm sm:text-base
-              bg-white text-slate-900 shadow-lg shadow-black/10 hover:bg-sky-50 hover:scale-[1.02] active:scale-[0.98]
-              transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-white/30
-              ${isUploading ? 'opacity-70 cursor-not-allowed' : ''}
-            `}
+            onClick={onOpenUploadModal}
+            className="inline-flex items-center gap-3 px-6 py-3.5 rounded-2xl font-bold text-sm sm:text-base bg-white text-slate-900 shadow-lg shadow-black/10 hover:bg-sky-50 hover:scale-[1.02] active:scale-[0.98] transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-white/30"
           >
-            {isUploading ? (
-              <>
-                <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
-                <span>Đang xử lý ảnh & tọa độ...</span>
-              </>
-            ) : (
-              <>
-                <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-sky-500 to-teal-500 text-white flex items-center justify-center shadow-sm">
-                  <Plus className="w-5 h-5 stroke-[2.5]" />
-                </div>
-                <span>Tạo chuyến đi mới (Create Journey)</span>
-              </>
-            )}
-          </button>
-
-          <button
-            onClick={handleCreateJourneyClick}
-            className="inline-flex items-center gap-2 px-5 py-3.5 rounded-2xl text-sm font-semibold text-white/90 hover:text-white bg-white/10 hover:bg-white/20 backdrop-blur-sm transition-all"
-          >
-            <UploadCloud className="w-5 h-5" />
-            <span>Kéo thả tệp tin vào đây</span>
+            <div className="w-7 h-7 rounded-xl bg-gradient-to-tr from-sky-500 to-teal-500 text-white flex items-center justify-center shadow-xs">
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+            </div>
+            <span>+ Tạo chuyến đi mới (Create Journey)</span>
           </button>
         </div>
-
-        {/* Upload Success Toast Notice */}
-        {uploadSuccess && (
-          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-white/20 backdrop-blur-md text-white text-sm font-medium border border-white/30 animate-in fade-in slide-in-from-bottom-2">
-            <CheckCircle className="w-4 h-4 text-emerald-300" />
-            <span>Đã nhận tệp thành công! Đang tự động đánh chỉ mục ký sự...</span>
-          </div>
-        )}
       </div>
     </div>
   );

@@ -1,36 +1,26 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import {
   Compass,
   History,
   Calendar,
   Settings,
-  LogOut,
   X,
   Sparkles
 } from './Icons';
 
 /**
  * Sidebar Component
- * - Cung cấp thanh điều hướng bên trái với logo, danh sách menu và nút Đăng xuất ở chân sidebar.
+ * - Cung cấp thanh điều hướng bên trái với logo và danh sách menu
  * - Hỗ trợ slide-over drawer trên Mobile khi isOpen = true.
  */
 const Sidebar = ({ isOpen, onClose }) => {
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
   const [activeTab, setActiveTab] = useState('history');
 
   const menuItems = [
     { id: 'history', label: 'Lịch sử chuyến đi', icon: History, badge: '12' },
-    { id: 'planner', label: 'Lên kế hoạch', icon: Calendar, badge: 'Mới' },
+    { id: 'planner', label: 'Lên kế hoạch (Planner)', icon: Calendar, badge: 'Mới' },
     { id: 'settings', label: 'Cài đặt', icon: Settings }
   ];
-
-  const handleLogout = () => {
-    logout();
-    navigate('/login');
-  };
 
   const handleMenuClick = (id) => {
     setActiveTab(id);
@@ -121,33 +111,17 @@ const Sidebar = ({ isOpen, onClose }) => {
           </nav>
         </div>
 
-        {/* Bottom Section: User Card & Logout Button */}
-        <div className="p-4 border-t border-slate-100 bg-slate-50/50">
-          {/* Mini User Profile */}
-          <div className="flex items-center gap-3 px-2 py-2 mb-2 rounded-xl">
-            <img
-              src={user?.avatar || "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=100&auto=format&fit=crop&q=80"}
-              alt="User Avatar"
-              className="w-10 h-10 rounded-full object-cover ring-2 ring-sky-500/20 shadow-sm"
-            />
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-slate-800 truncate">
-                {user?.name || 'Nhà thám hiểm'}
-              </p>
-              <p className="text-xs text-slate-400 truncate">
-                {user?.email || 'traveler@travelogue.com'}
-              </p>
+        {/* Bottom Section: Hệ thống & Trạng thái AI */}
+        <div className="p-4 border-t border-slate-100">
+          <div className="p-3 rounded-2xl bg-sky-50/60 border border-sky-100/80 flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl bg-sky-500/10 flex items-center justify-center text-sky-600">
+              <Sparkles className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-slate-800">Auto-Index AI</p>
+              <p className="text-[11px] text-slate-400">Sẵn sàng nhận dữ liệu</p>
             </div>
           </div>
-
-          {/* Logout Button */}
-          <button
-            onClick={handleLogout}
-            className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-medium text-slate-600 hover:bg-rose-50 hover:text-rose-600 transition-all duration-200 group"
-          >
-            <LogOut className="w-5 h-5 text-slate-400 group-hover:text-rose-500 transition-colors" />
-            <span>Đăng xuất</span>
-          </button>
         </div>
       </aside>
     </>

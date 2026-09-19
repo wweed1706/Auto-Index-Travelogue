@@ -36,8 +36,8 @@ const TripCardPlaceholder = ({ index, onClick }) => {
 
       {/* Action Indicator */}
       <div className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-600 group-hover:translate-y-0.5 transition-transform">
-        <MapPin className="w-3.5 h-3.5" />
-        <span>Tạo địa điểm mới</span>
+        <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+        <span>Tạo chuyến đi đầu tiên</span>
       </div>
     </div>
   );
