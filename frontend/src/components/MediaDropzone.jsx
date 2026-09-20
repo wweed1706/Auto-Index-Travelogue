@@ -148,7 +148,10 @@ const MediaDropzone = ({ onUploadSuccess, onCloseModal }) => {
     });
   };
 
-  const handleUploadSubmit = () => {
+  const handleUploadSubmit = (e) => {
+    if (e && typeof e.preventDefault === 'function') {
+      e.preventDefault();
+    }
     if (selectedFiles.length === 0 || isUploading) return;
 
     setIsUploading(true);

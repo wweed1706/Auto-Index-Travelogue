@@ -3,6 +3,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import JourneyDetail from './pages/JourneyDetail';
+import SmartPlanner from './pages/SmartPlanner';
 import ProtectedRoute from './components/ProtectedRoute';
 
 /**
@@ -12,6 +13,8 @@ import ProtectedRoute from './components/ProtectedRoute';
  * - /dashboard: Trang Bảng điều khiển (Được bảo vệ bởi <ProtectedRoute>)
  * - /journey/:id: Trang Chi tiết chuyến đi (Được bảo vệ bởi <ProtectedRoute>)
  * - /journey-preview: Trang Chi tiết chuyến đi công khai để kiểm thử
+ * - /planner: Trang Lập kế hoạch chuyến đi thông minh AI (Module 2)
+ * - /planner-preview: Trang Lập kế hoạch công khai để kiểm thử
  * - /: Điều hướng mặc định tới /dashboard (Nếu chưa đăng nhập sẽ tự chuyển về /login)
  * - *: Mọi đường dẫn không tồn tại chuyển hướng về /login
  */
@@ -57,6 +60,29 @@ function App() {
       <Route
         path="/journey-preview"
         element={<JourneyDetail />}
+      />
+
+      {/* Route được bảo vệ: Lập kế hoạch chuyến đi (Module 2 - Smart Planner) */}
+      <Route
+        path="/planner"
+        element={
+          <ProtectedRoute>
+            <SmartPlanner />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/smart-planner"
+        element={
+          <ProtectedRoute>
+            <SmartPlanner />
+          </ProtectedRoute>
+        }
+      />
+      {/* Route cho phép xem Smart Planner không cần đăng nhập */}
+      <Route
+        path="/planner-preview"
+        element={<SmartPlanner />}
       />
       {/* Mặc định chuyển hướng tới /dashboard */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

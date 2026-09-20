@@ -1,5 +1,5 @@
-// Đường dẫn: src/components/Sidebar.jsx
 import React, { useState } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import {
   Compass,
   History,
@@ -16,16 +16,23 @@ import {
  * - Hỗ trợ slide-over drawer trên Mobile khi isOpen = true.
  */
 const Sidebar = ({ isOpen, onClose }) => {
-  const [activeTab, setActiveTab] = useState('history');
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [activeTab, setActiveTab] = useState(
+    location.pathname.includes('planner') ? 'planner' : 'history'
+  );
 
   const menuItems = [
-    { id: 'history', label: 'Lịch sử chuyến đi', icon: History, badge: '12' },
-    { id: 'planner', label: 'Lên kế hoạch', icon: Calendar, badge: 'Mới' },
+    { id: 'history', label: 'Lịch sử chuyến đi', icon: History, badge: '12', path: '/dashboard' },
+    { id: 'planner', label: 'Lên kế hoạch', icon: Calendar, badge: 'Mới', path: '/planner-preview' },
     { id: 'settings', label: 'Cài đặt', icon: Settings }
   ];
 
-  const handleMenuClick = (id) => {
-    setActiveTab(id);
+  const handleMenuClick = (item) => {
+    setActiveTab(item.id);
+    if (item.path) {
+      navigate(item.path);
+    }
     if (window.innerWidth < 768 && onClose) {
       onClose();
     }
@@ -86,7 +93,7 @@ const Sidebar = ({ isOpen, onClose }) => {
               return (
                 <button
                   key={item.id}
-                  onClick={() => handleMenuClick(item.id)}
+                  onClick={() => handleMenuClick(item)}
                   className={`
                     w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl font-medium text-sm transition-all duration-200
                     ${isActive 

@@ -3,6 +3,9 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import GalleryView from '../components/GalleryView';
 import TimelineView from '../components/TimelineView';
+import MapView from '../components/MapView';
+import AISearch from '../components/AISearch';
+import AISummary from '../components/AISummary';
 import { 
   ArrowLeft, 
   Calendar, 
@@ -223,17 +226,69 @@ const MOCK_JOURNEY = {
  * Quản lý giao diện chi tiết chuyến đi:
  * - Header: Tên chuyến đi, thời gian, và ảnh cover mờ làm background phía trên cùng
  * - Thanh điều hướng (View Toggle): Chuyển đổi giữa [Lưới ảnh (Gallery)], [Dòng thời gian (Timeline)], [Bản đồ (Map)]
- * - Quản lý State: activeTab ('gallery' | 'timeline' | 'map') để render có điều kiện
+ * - Tích hợp Task 7: MapView (Bản đồ tương tác với Markers & Tooltips)
+ * - Tích hợp Task 8: AISearch & AISummary (Tìm kiếm ngôn ngữ tự nhiên và tóm tắt AI)
  */
 const JourneyDetail = ({ journeyData = MOCK_JOURNEY }) => {
   const navigate = useNavigate();
   // State quản lý tab hiển thị: 'gallery' | 'timeline' | 'map'
   const [activeTab, setActiveTab] = useState('gallery');
 
+  // State quản lý tìm kiếm AI (Task 8)
+  const [isAiSearching, setIsAiSearching] = useState(false);
+  const [aiSearchResult, setAiSearchResult] = useState(null);
+
   const journey = journeyData || MOCK_JOURNEY;
 
   const handleBackToDashboard = () => {
     navigate('/dashboard');
+  };
+
+  // Logic mô phỏng phản hồi AI thông minh dựa trên câu hỏi
+  const handleAISearch = (queryText) => {
+    setIsAiSearching(true);
+    setAiSearchResult(null);
+
+    setTimeout(() => {
+      const lowerQuery = queryText.toLowerCase();
+      let summaryText = '';
+      let matchingPhotos = [];
+      let stats = {
+        places: '3 địa điểm',
+        photosCount: '4 bức ảnh',
+        timeRange: '15/08 - 18/08/2026'
+      };
+
+      if (lowerQuery.includes('cafe') || lowerQuery.includes('cà phê')) {
+        summaryText = 'Bạn đã ghé thăm 3 quán cafe và không gian ngắm cảnh tại Đà Lạt. Nổi bật nhất là Tiệm Cà Phê Hoàng Hôn Trên Dốc với view thung lũng thông tuyệt đẹp lúc 16:45, và quán cafe mộc mạc ấm cúng tại Dốc Nhà Bò.';
+        matchingPhotos = journey.photos.filter((p) => p.tags.includes('#cafe') || p.tags.includes('#hoang-hon') || p.tags.includes('#chill'));
+        stats = { places: '2 quán cafe', photosCount: `${matchingPhotos.length} bức ảnh`, timeRange: 'Chiều 15 & 18/08' };
+      } else if (lowerQuery.includes('săn mây') || lowerQuery.includes('mây') || lowerQuery.includes('bình minh')) {
+        summaryText = 'AI nhận diện bạn đã săn mây thành công tại Đồi Chè Cầu Đất vào sáng sớm ngày 15/08 (06:15). Ánh bình minh vàng rực rỡ chiếu rọi qua biển mây bồng bềnh phủ kín thung lũng chè.';
+        matchingPhotos = journey.photos.filter((p) => p.tags.includes('#san-may') || p.tags.includes('#binh-minh'));
+        stats = { places: 'Đồi Chè Cầu Đất', photosCount: `${matchingPhotos.length} bức ảnh`, timeRange: '06:15 • 15/08' };
+      } else if (lowerQuery.includes('ăn') || lowerQuery.includes('lẩu') || lowerQuery.includes('ẩm thực') || lowerQuery.includes('đặc sản')) {
+        summaryText = 'Bạn đã trải nghiệm 2 nét ẩm thực trứ danh Đà Lạt: Nồi lẩu gà lá é Tao Ngộ đậm đà the cay ớt xiêm lúc trưa 16/08, và món bánh tráng nướng giòn rụm nóng hổi tại Chợ Đêm Đà Lạt.';
+        matchingPhotos = journey.photos.filter((p) => p.tags.includes('#am-thuc') || p.tags.includes('#dac-san') || p.tags.includes('#cho-dem'));
+        stats = { places: '2 điểm ẩm thực', photosCount: `${matchingPhotos.length} bức ảnh`, timeRange: '16/08 & 17/08' };
+      } else {
+        summaryText = `AI Travelogue đã phân tích chuyến đi và tìm thấy các khoảnh khắc khớp với "${queryText}". Hành trình gồm các điểm nhấn thiên nhiên, cung đường đèo và không gian sương mù đặc trưng Đà Lạt.`;
+        matchingPhotos = journey.photos.slice(0, 4);
+        stats = { places: 'Đà Lạt, Lâm Đồng', photosCount: `${matchingPhotos.length} bức ảnh`, timeRange: journey.dateRange };
+      }
+
+      setAiSearchResult({
+        query: queryText,
+        summaryText,
+        stats,
+        matchingPhotos
+      });
+      setIsAiSearching(false);
+    }, 800);
+  };
+
+  const handleClearAISearch = () => {
+    setAiSearchResult(null);
   };
 
   return (
@@ -284,7 +339,7 @@ const JourneyDetail = ({ journeyData = MOCK_JOURNEY }) => {
               </div>
 
               {/* Địa điểm */}
-              {journey.location && (
+              {journey?.location && (
                 <div className="flex items-center gap-1.5">
                   <MapPin className="w-4 h-4 text-purple-400 shrink-0" />
                   <span>{journey.location}</span>
@@ -292,7 +347,7 @@ const JourneyDetail = ({ journeyData = MOCK_JOURNEY }) => {
               )}
 
               {/* Tổng số ảnh */}
-              {Array.isArray(journey.photos) && (
+              {Array.isArray(journey?.photos) && (
                 <div className="flex items-center gap-1.5">
                   <ImageIcon className="w-4 h-4 text-sky-400 shrink-0" />
                   <span>{journey.photos.length} hình ảnh</span>
@@ -300,7 +355,7 @@ const JourneyDetail = ({ journeyData = MOCK_JOURNEY }) => {
               )}
 
               {/* Tổng số mốc */}
-              {Array.isArray(journey.timeline) && (
+              {Array.isArray(journey?.timeline) && (
                 <div className="flex items-center gap-1.5">
                   <Compass className="w-4 h-4 text-emerald-400 shrink-0" />
                   <span>{journey.timeline.length} điểm dừng</span>
@@ -326,7 +381,7 @@ const JourneyDetail = ({ journeyData = MOCK_JOURNEY }) => {
             >
               <ImageIcon className="w-4 h-4" />
               <span>Lưới ảnh (Gallery)</span>
-              {Array.isArray(journey.photos) && (
+              {Array.isArray(journey?.photos) && (
                 <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${
                   activeTab === 'gallery' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
                 }`}>
@@ -346,7 +401,7 @@ const JourneyDetail = ({ journeyData = MOCK_JOURNEY }) => {
             >
               <History className="w-4 h-4" />
               <span>Dòng thời gian (Timeline)</span>
-              {Array.isArray(journey.timeline) && (
+              {Array.isArray(journey?.timeline) && (
                 <span className={`text-[11px] px-1.5 py-0.5 rounded-full ${
                   activeTab === 'timeline' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-600'
                 }`}>
@@ -355,7 +410,7 @@ const JourneyDetail = ({ journeyData = MOCK_JOURNEY }) => {
               )}
             </button>
 
-            {/* Tab 3: Bản đồ (Map) */}
+            {/* Tab 3: Bản đồ (Map) - Đã hoàn thiện Task 7 */}
             <button
               onClick={() => setActiveTab('map')}
               className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 ${
@@ -366,8 +421,8 @@ const JourneyDetail = ({ journeyData = MOCK_JOURNEY }) => {
             >
               <MapIcon className="w-4 h-4" />
               <span>Bản đồ (Map)</span>
-              <span className="text-[10px] uppercase font-semibold px-2 py-0.5 rounded-full bg-purple-100 text-purple-700">
-                Sắp ra mắt
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-teal-100 text-teal-800">
+                {Array.isArray(journey?.mapPlaces) ? `${journey.mapPlaces.length} điểm ghim` : '6 điểm ghim'}
               </span>
             </button>
           </nav>
@@ -375,49 +430,43 @@ const JourneyDetail = ({ journeyData = MOCK_JOURNEY }) => {
       </div>
 
       {/* 3. KHU VỰC NỘI DUNG CHÍNH (CONDITIONAL RENDERING) */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6 sm:space-y-8">
+        
+        {/* KHU VỰC TÌM KIẾM AI (TASK 8: AI SEARCH & AI SUMMARY) */}
+        <section aria-label="Tìm kiếm AI trong chuyến đi" className="space-y-4">
+          <AISearch 
+            onSearch={handleAISearch} 
+            isLoading={isAiSearching} 
+          />
+
+          {/* Khối tóm tắt AI khi có kết quả hoặc đang tải */}
+          {(isAiSearching || aiSearchResult) && (
+            <AISummary
+              result={aiSearchResult}
+              isLoading={isAiSearching}
+              onClear={handleClearAISearch}
+            />
+          )}
+        </section>
+
         {/* Góc nhìn 1: Lưới ảnh */}
         {activeTab === 'gallery' && (
           <section aria-label="Lưới ảnh chuyến đi">
-            <GalleryView photos={journey.photos} />
+            <GalleryView photos={journey?.photos} />
           </section>
         )}
 
         {/* Góc nhìn 2: Dòng thời gian */}
         {activeTab === 'timeline' && (
           <section aria-label="Dòng thời gian chuyến đi">
-            <TimelineView timeline={journey.timeline} />
+            <TimelineView timeline={journey?.timeline} />
           </section>
         )}
 
-        {/* Góc nhìn 3: Bản đồ (Hiện thông báo Coming Soon) */}
+        {/* Góc nhìn 3: Bản đồ (Đã hoàn thiện Task 7 với MapView tương tác) */}
         {activeTab === 'map' && (
-          <section aria-label="Bản đồ chuyến đi" className="py-12">
-            <div className="flex flex-col items-center justify-center p-8 sm:p-14 bg-white rounded-3xl border border-slate-200/80 shadow-sm text-center max-w-xl mx-auto">
-              <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-purple-50 to-teal-50 border border-purple-100 flex items-center justify-center text-purple-600 mb-5 shadow-sm">
-                <MapIcon className="w-10 h-10" />
-              </div>
-              
-              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-purple-100 text-purple-700 mb-3">
-                <Sparkles className="w-3.5 h-3.5" />
-                <span>Tính năng đang phát triển</span>
-              </span>
-
-              <h3 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight mb-2">
-                Bản đồ tương tác hành trình
-              </h3>
-
-              <p className="text-sm text-slate-500 leading-relaxed max-w-md mb-6">
-                Hệ thống đang tích hợp AI Geocoding để tự động vẽ lại hải trình và đường bay/xe của bạn trên bản đồ 3D vệ tinh. Tính năng sẽ có mặt ở phiên bản tiếp theo!
-              </p>
-
-              <button
-                onClick={() => setActiveTab('gallery')}
-                className="px-5 py-2.5 rounded-xl bg-slate-900 text-white text-xs sm:text-sm font-semibold hover:bg-slate-800 transition-colors"
-              >
-                Quay lại xem ảnh
-              </button>
-            </div>
+          <section aria-label="Bản đồ chuyến đi">
+            <MapView places={journey?.mapPlaces} />
           </section>
         )}
       </main>

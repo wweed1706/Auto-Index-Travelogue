@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Sparkles, ArrowRight, Calendar } from './Icons';
 
 /**
@@ -9,11 +10,13 @@ import { Sparkles, ArrowRight, Calendar } from './Icons';
  * - Nút bấm: "Thử Smart Planner ->"
  */
 const SmartPlannerCTA = ({ onTryPlanner }) => {
+  const navigate = useNavigate();
+
   const handleClick = () => {
     if (onTryPlanner) {
       onTryPlanner();
     } else {
-      alert('Tính năng Module 2: AI Smart Planner đang được kích hoạt!');
+      navigate('/planner-preview');
     }
   };
 
