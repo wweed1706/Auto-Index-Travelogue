@@ -31,7 +31,7 @@ export default function Login({ register = false }: { register?: boolean }) {
       />
       <form
         onSubmit={submit}
-        className="space-y-5 rounded-2xl border border-slate-200 bg-white p-6"
+        className="space-y-5 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 "
       >
         <ErrorNotice message={error} />
         <label className="block text-sm">
@@ -55,9 +55,9 @@ export default function Login({ register = false }: { register?: boolean }) {
           />
         </label>
         <button className={buttonClass}>Lưu hồ sơ và tiếp tục</button>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 ">
           <Link
-            className="text-teal-700 underline"
+            className="text-slate-700 underline transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80"
             to={register ? "/login" : "/register"}
           >
             {register ? "Dùng hồ sơ cá nhân" : "Tạo hồ sơ mới"}

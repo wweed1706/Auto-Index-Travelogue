@@ -29,14 +29,14 @@ const PlannerItinerary = ({ days = [] }: { days?: ItineraryDay[] }) => {
       {/* Header phần lịch trình */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-100 text-teal-700 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
+            <Sparkles className="w-3.5 h-3.5 text-slate-600/90 " />
             <span>Lịch trình chi tiết theo giờ</span>
           </div>
           <h3 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
             Lịch trình của bạn
           </h3>
-          <p className="text-xs sm:text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-500 ">
             Thêm hoạt động theo giờ để hoàn thiện kế hoạch từng ngày.
           </p>
         </div>
@@ -45,10 +45,10 @@ const PlannerItinerary = ({ days = [] }: { days?: ItineraryDay[] }) => {
         <div className="bg-slate-100/90 p-1.5 rounded-2xl flex items-center gap-1.5 overflow-x-auto ">
           <button
             onClick={() => setSelectedDayTab("all")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80 disabled:hover:translate-y-0 disabled:hover:shadow-none ${
               selectedDayTab === "all"
-                ? "bg-teal-50 text-teal-800"
-                : "text-slate-600 hover:text-slate-800"
+                ? "bg-slate-50 text-slate-800 "
+                : "text-slate-600 hover:text-slate-800 "
             }`}
           >
             Tất cả ({itineraryDays.length} ngày)
@@ -58,10 +58,10 @@ const PlannerItinerary = ({ days = [] }: { days?: ItineraryDay[] }) => {
             <button
               key={d.dayNumber}
               onClick={() => setSelectedDayTab(d.dayNumber.toString())}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all ${
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80 disabled:hover:translate-y-0 disabled:hover:shadow-none ${
                 selectedDayTab === d.dayNumber.toString()
-                  ? "bg-teal-600 text-white shadow-sm"
-                  : "text-slate-600 hover:text-slate-800"
+                  ? "bg-sky-100 text-sky-800 shadow-sm"
+                  : "text-slate-600 hover:text-slate-800 "
               }`}
             >
               Ngày {d.dayNumber}
@@ -72,8 +72,8 @@ const PlannerItinerary = ({ days = [] }: { days?: ItineraryDay[] }) => {
 
       {/* DANH SÁCH CÁC THẺ THEO NGÀY (DAY CARDS) */}
       {displayedDays.length === 0 ? (
-        <div className="flex flex-col items-center justify-center p-12 bg-white rounded-2xl border border-slate-200/80 shadow-sm text-center">
-          <div className="w-16 h-16 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mb-4">
+        <div className="flex flex-col items-center justify-center p-12 bg-white rounded-2xl border border-slate-200/70 shadow-sm text-center transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 ">
+          <div className="w-16 h-16 rounded-2xl bg-slate-50 text-slate-600/90 flex items-center justify-center mb-4">
             <Calendar className="w-8 h-8" />
           </div>
           <h4 className="text-lg font-bold text-slate-800 mb-1">
@@ -95,12 +95,12 @@ const PlannerItinerary = ({ days = [] }: { days?: ItineraryDay[] }) => {
             return (
               <div
                 key={dayKey}
-                className="bg-white rounded-2xl p-3 sm:p-8 border border-slate-200/80 shadow-sm space-y-6 animate--up"
+                className="bg-white rounded-2xl p-3 sm:p-8 border border-slate-200/70 shadow-sm space-y-6 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 motion-safe:[@starting-style]:opacity-0 motion-safe:[@starting-style]:translate-y-4"
               >
                 {/* Header Thẻ Ngày */}
-                <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100">
+                <div className="flex flex-wrap items-center justify-between gap-3 pb-4 border-b border-slate-100 ">
                   <div className="flex items-center gap-3.5">
-                    <div className="w-12 h-12 rounded-2xl bg-teal-50 text-teal-800 font-semibold text-base sm:text-lg flex items-center justify-center shadow-sm  shrink-0">
+                    <div className="w-12 h-12 rounded-2xl bg-slate-50 text-slate-800 font-semibold text-base sm:text-lg flex items-center justify-center shadow-sm shrink-0 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 ">
                       N{day?.dayNumber || dIdx + 1}
                     </div>
                     <div>
@@ -108,12 +108,12 @@ const PlannerItinerary = ({ days = [] }: { days?: ItineraryDay[] }) => {
                         {day?.title || `Ngày ${day?.dayNumber || dIdx + 1}`}
                       </h4>
                       <div className="flex items-center gap-2 text-xs text-slate-500 mt-0.5">
-                        <Calendar className="w-3.5 h-3.5 text-teal-600" />
+                        <Calendar className="w-3.5 h-3.5 text-slate-600/90 " />
                         <span>{day?.date}</span>
                         {day?.weather && (
                           <>
                             <span>•</span>
-                            <span className="text-teal-600 font-medium">
+                            <span className="text-slate-600/90 font-medium">
                               {day.weather}
                             </span>
                           </>
@@ -122,7 +122,7 @@ const PlannerItinerary = ({ days = [] }: { days?: ItineraryDay[] }) => {
                     </div>
                   </div>
 
-                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-teal-50 text-teal-700 border border-teal-100">
+                  <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-50 text-slate-700 border border-slate-100 ">
                     {activities.length} hoạt động
                   </span>
                 </div>
@@ -130,7 +130,7 @@ const PlannerItinerary = ({ days = [] }: { days?: ItineraryDay[] }) => {
                 {/* TIMELINE TRONG NGÀY (CẤU TRÚC DỌC VỚI CÁC MỐC GIỜ) */}
                 <div className="relative pl-6 sm:pl-10 before:absolute before:left-3 sm:before:left-4 before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200 space-y-6">
                   {activities.length === 0 && (
-                    <p className="py-4 text-sm text-slate-500">
+                    <p className="py-4 text-sm text-slate-500 ">
                       Chưa có hoạt động. Thêm địa điểm và thời gian ở bên dưới.
                     </p>
                   )}
@@ -141,35 +141,35 @@ const PlannerItinerary = ({ days = [] }: { days?: ItineraryDay[] }) => {
                     return (
                       <div key={actKey} className="relative group">
                         {/* Điểm đánh dấu (Dot) trên trục dọc timeline */}
-                        <div className="absolute -left-[19px] sm:-left-[23px] top-1.5 w-6 h-6 rounded-full bg-white border-2 border-teal-600 shadow-sm flex items-center justify-center text-teal-600">
-                          <span className="w-2 h-2 rounded-full bg-teal-600" />
+                        <div className="absolute -left-[19px] sm:-left-[23px] top-1.5 w-6 h-6 rounded-full bg-white border-2 border-slate-600 shadow-sm flex items-center justify-center text-slate-600/90 ">
+                          <span className="w-2 h-2 rounded-full bg-slate-600/90" />
                         </div>
 
                         {/* Khối nổi bật cho từng mốc giờ (Highlighted Block) */}
-                        <div className="bg-slate-50/70 hover:bg-white rounded-2xl p-3 sm:p-5 border border-slate-200/70 hover:border-teal-200 hover:shadow-sm transition-all duration-300 space-y-3">
+                        <div className="bg-slate-50/70 hover:bg-white rounded-2xl p-3 sm:p-5 border border-slate-200/70 hover:border-slate-200 hover:shadow-sm space-y-3 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 ">
                           {/* Hàng 1: Mốc giờ & Icon phân loại (Ăn uống / Di chuyển / Ngắm cảnh) */}
                           <div className="flex flex-wrap items-center justify-between gap-2">
                             <div className="flex flex-wrap items-center gap-2">
                               {/* Mốc giờ */}
-                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-teal-100/90 text-teal-900 border border-teal-200/60">
-                                <Clock className="w-3.5 h-3.5 text-teal-700" />
+                              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-semibold bg-slate-100/90 text-slate-900 border border-slate-200/60 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 ">
+                                <Clock className="w-3.5 h-3.5 text-slate-600/90 " />
                                 <span>{act?.time || "00:00"}</span>
                               </div>
 
                               {/* Icon và nhãn phân loại */}
-                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border bg-teal-50 text-teal-700 border-teal-100">
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border bg-slate-50 text-slate-700 border-slate-200/70 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 ">
                                 <IconComponent className="w-3.5 h-3.5" />
                                 <span>{act?.typeLabel || "Hoạt động"}</span>
                               </div>
                             </div>
 
                             {/* Thời lượng dự kiến hoặc Chi phí */}
-                            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500">
+                            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 ">
                               {act?.duration && <span>{act.duration}</span>}
                               {act?.cost && (
                                 <>
                                   <span>•</span>
-                                  <span className="text-teal-700 font-bold">
+                                  <span className="text-slate-700 font-bold">
                                     {act.cost}
                                   </span>
                                 </>
@@ -180,14 +180,14 @@ const PlannerItinerary = ({ days = [] }: { days?: ItineraryDay[] }) => {
                           {/* Hàng 2: Tên địa điểm & Ảnh thumbnail */}
                           <div className="flex items-start justify-between gap-4">
                             <div className="space-y-1 min-w-0">
-                              <h5 className="font-bold text-slate-800 text-sm sm:text-base tracking-tight break-words group-hover:text-teal-700 transition-colors">
+                              <h5 className="font-bold text-slate-800 text-sm sm:text-base tracking-tight break-words group-hover:text-slate-700">
                                 {act?.location}
                               </h5>
 
                               {/* Ghi chú nhỏ của AI (Ghi chú) */}
                               {act?.aiNote && (
-                                <div className="mt-2 p-3 rounded-xl bg-teal-50/80 border border-teal-100 flex items-start gap-2.5">
-                                  <Sparkles className="w-4 h-4 text-teal-600 mt-0.5 shrink-0" />
+                                <div className="mt-2 p-3 rounded-xl bg-slate-50/80 border border-slate-200/70 flex items-start gap-2.5 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 ">
+                                  <Sparkles className="w-4 h-4 text-slate-600/90 mt-0.5 shrink-0" />
                                   <p className="text-xs sm:text-sm text-slate-700 leading-relaxed break-words">
                                     <strong>Ghi chú:</strong> {act.aiNote}
                                   </p>
@@ -197,12 +197,12 @@ const PlannerItinerary = ({ days = [] }: { days?: ItineraryDay[] }) => {
 
                             {/* Ảnh thumbnail nếu có */}
                             {act?.image && (
-                              <div className="w-20 sm:w-28 h-16 sm:h-20 rounded-xl overflow-hidden bg-slate-200 shrink-0 border border-slate-200/60">
+                              <div className="w-20 sm:w-28 h-16 sm:h-20 rounded-xl overflow-hidden bg-slate-200 shrink-0 border border-slate-200/70 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 ">
                                 <img
                                   src={act.image}
                                   alt={act?.location || "Ảnh hoạt động"}
                                   loading="lazy"
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none"
                                 />
                               </div>
                             )}

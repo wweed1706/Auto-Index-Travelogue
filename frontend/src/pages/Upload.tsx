@@ -72,7 +72,7 @@ export default function Upload() {
       />
       <form
         onSubmit={submit}
-        className="space-y-6 rounded-2xl border border-slate-200/70 bg-white p-4 sm:p-7"
+        className="space-y-6 rounded-2xl border border-slate-200/70 bg-white p-4 sm:p-7 shadow-sm transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 "
       >
         <fieldset disabled={saving} className="space-y-6">
           <div className="grid gap-5 lg:grid-cols-2">

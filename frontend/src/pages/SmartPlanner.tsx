@@ -90,7 +90,10 @@ export default function SmartPlanner() {
         <ErrorNotice message={loadError} />
         <EmptyState>
           Không tìm thấy kế hoạch.{" "}
-          <Link to="/gallery" className="text-teal-700 underline">
+          <Link
+            to="/gallery"
+            className="text-slate-700 underline transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80"
+          >
             Về Gallery
           </Link>
         </EmptyState>
@@ -105,7 +108,7 @@ export default function SmartPlanner() {
       <ErrorNotice message={error || loadError} />
       {!plan ? (
         <>
-          <p className="rounded-xl border border-slate-200 bg-white p-4 text-sm leading-7 text-slate-500">
+          <p className="rounded-xl border border-slate-100 bg-white p-4 text-sm leading-7 text-slate-500 shadow-sm">
             Bạn có thể tạo và lưu bản nháp, thêm hoạt động theo giờ. Đề xuất địa
             điểm và tạo lịch trình bằng AI đang chờ kết nối.
           </p>
@@ -113,16 +116,19 @@ export default function SmartPlanner() {
         </>
       ) : (
         <>
-          <section className="space-y-4 rounded-2xl border border-slate-200 bg-white p-6">
+          <section className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 ">
             <div className="flex flex-wrap items-center justify-between gap-4">
-              <h2 className="text-xl font-semibold">
+              <h2 className="text-xl font-semibold text-slate-800 ">
                 {plan.criteria.destination}
               </h2>
-              <Link className="text-sm text-teal-700 underline" to="/planner">
+              <Link
+                className="text-sm text-slate-700 underline transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80"
+                to="/planner"
+              >
                 Tạo kế hoạch khác
               </Link>
             </div>
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-slate-500 ">
               {plan.criteria.startDate} · {plan.criteria.endDate} ·{" "}
               {plan.criteria.travelers} người ·{" "}
               {plan.criteria.budget.toLocaleString("vi-VN")} đ/người
@@ -135,12 +141,15 @@ export default function SmartPlanner() {
                 Điều cần tránh: {plan.criteria.dislikes}
               </p>
             )}
-            <p role="status" className="text-xs text-teal-700">
+            <p
+              role="status"
+              className="text-xs text-slate-700 "
+            >
               Đã lưu bản nháp trên thiết bị
             </p>
             <Link
               to="/gallery"
-              className="inline-block text-sm text-teal-700 underline"
+              className="inline-block text-sm text-slate-700 underline transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80"
             >
               Xem trong Gallery
             </Link>
@@ -148,9 +157,11 @@ export default function SmartPlanner() {
           <PlannerItinerary key={plan.id} days={plan.days} />
           <form
             onSubmit={addActivity}
-            className="space-y-4 rounded-2xl border border-slate-200 bg-white p-5"
+            className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 "
           >
-            <h2 className="font-semibold">Thêm hoạt động vào lịch trình</h2>
+            <h2 className="font-semibold text-slate-800 ">
+              Thêm hoạt động vào lịch trình
+            </h2>
             <fieldset disabled={saving} className="grid gap-4 lg:grid-cols-2">
               <label className="text-sm">
                 Ngày

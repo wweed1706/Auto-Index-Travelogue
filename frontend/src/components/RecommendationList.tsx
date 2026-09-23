@@ -52,21 +52,21 @@ const RecommendationList = ({
       {/* Tiêu đề phần đề xuất */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-100 text-teal-700 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
+            <Sparkles className="w-3.5 h-3.5 text-slate-600/90 " />
             <span>Địa điểm</span>
           </div>
           <h3 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
             Địa điểm gợi ý cho bạn
           </h3>
-          <p className="text-xs sm:text-sm text-slate-500">
+          <p className="text-xs sm:text-sm text-slate-500 ">
             Các địa điểm được cung cấp cho kế hoạch của bạn.
           </p>
         </div>
 
         {/* Số lượng địa điểm đã thêm */}
         {addedIds.size > 0 && (
-          <div className="text-xs font-bold text-teal-700 bg-teal-50 px-3.5 py-1.5 rounded-full border border-teal-200">
+          <div className="text-xs font-bold text-slate-700 bg-slate-50 px-3.5 py-1.5 rounded-full border border-slate-200 ">
             ✓ Đã thêm {addedIds.size} địa điểm vào lịch trình
           </div>
         )}
@@ -84,21 +84,21 @@ const RecommendationList = ({
               key={cat.id}
               aria-pressed={isActive}
               onClick={() => setActiveCategory(cat.id)}
-              className={`min-w-0 py-2.5 px-3.5 rounded-xl text-xs sm:text-sm font-bold transition-all duration-200 flex items-center justify-center gap-2 whitespace-nowrap ${
+              className={`min-w-0 py-2.5 px-3.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 whitespace-nowrap transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80 disabled:hover:translate-y-0 disabled:hover:shadow-none ${
                 isActive
-                  ? "bg-white text-teal-900 shadow-sm "
-                  : "text-slate-600 hover:text-slate-800 hover:bg-white/50"
+                  ? "bg-white text-slate-900 shadow-sm "
+                  : "text-slate-600 hover:text-slate-800 hover:bg-white/50 "
               }`}
             >
               <Icon
-                className={`w-4 h-4 ${isActive ? "text-teal-600" : "text-slate-400"}`}
+                className={`w-4 h-4 ${isActive ? "text-slate-600/90 " : "text-slate-400 "}`}
               />
               <span>{cat.label}</span>
               <span
                 className={`text-[10px] px-1.5 py-0.5 rounded-full ${
                   isActive
-                    ? "bg-teal-100 text-teal-800"
-                    : "bg-slate-200 text-slate-500"
+                    ? "bg-slate-100 text-slate-800 "
+                    : "bg-slate-200 text-slate-500 "
                 }`}
               >
                 {count}
@@ -110,7 +110,7 @@ const RecommendationList = ({
 
       {/* LƯỚI CARD ĐỊA ĐIỂM (PLACE CARDS) */}
       {filteredPlaces.length === 0 ? (
-        <div className="p-5 sm:p-8 text-center bg-white rounded-2xl border border-slate-200/80 text-slate-500">
+        <div className="p-5 sm:p-8 text-center bg-white rounded-2xl border border-slate-200/70 text-slate-500 shadow-sm transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 ">
           Chưa có đề xuất trong danh mục này. Dịch vụ AI và Google Places đang
           chờ kết nối.
         </div>

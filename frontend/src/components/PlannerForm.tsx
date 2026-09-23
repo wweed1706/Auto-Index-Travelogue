@@ -135,22 +135,22 @@ const PlannerForm = ({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-6 rounded-2xl border border-slate-200 bg-white p-4 sm:p-7"
+      className="space-y-8 rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm hover:shadow-lg hover:shadow-slate-900/5 sm:p-8 lg:p-10 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none"
     >
       <div className="space-y-2">
-        <h2 className="font-semibold text-slate-800">
+        <h2 className="font-semibold text-slate-800 ">
           Bạn muốn đi đâu tiếp theo?
         </h2>
-        <p className="text-sm text-slate-500">
+        <p className="text-sm text-slate-500 ">
           Thông tin được lưu cùng bản nháp để bạn tiếp tục hoàn thiện lịch
           trình.
         </p>
       </div>
       <fieldset
         disabled={isLoading}
-        className="grid min-w-0 gap-5 lg:grid-cols-2"
+        className="grid min-w-0 gap-x-8 gap-y-6 lg:grid-cols-2"
       >
-        <label className="block text-sm">
+        <label className="block text-xs font-medium text-slate-600 ">
           Điểm đến mong muốn
           <input
             list="destinations"
@@ -171,7 +171,7 @@ const PlannerForm = ({
             </span>
           )}
         </label>
-        <label className="block text-sm">
+        <label className="block text-xs font-medium text-slate-600 ">
           Số lượng người
           <input
             type="number"
@@ -188,7 +188,7 @@ const PlannerForm = ({
             </span>
           )}
         </label>
-        <label className="block text-sm">
+        <label className="block text-xs font-medium text-slate-600 ">
           Ngày khởi hành
           <input
             type="date"
@@ -198,7 +198,7 @@ const PlannerForm = ({
             required
           />
         </label>
-        <label className="block text-sm">
+        <label className="block text-xs font-medium text-slate-600 ">
           Ngày kết thúc
           <input
             type="date"
@@ -214,13 +214,13 @@ const PlannerForm = ({
             </span>
           )}
         </label>
-        <div className="space-y-4 rounded-xl bg-slate-50 p-4 lg:col-span-2">
+        <div className="space-y-5 rounded-2xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-white p-5 lg:col-span-2 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:border-slate-300">
           <label
             className="flex flex-wrap justify-between gap-2 text-sm"
             htmlFor="budget"
           >
             Ngân sách mỗi người{" "}
-            <span className="font-medium text-teal-800">
+            <span className="font-medium text-slate-800 ">
               {formatCurrency(budget)}
             </span>
           </label>
@@ -232,7 +232,7 @@ const PlannerForm = ({
             step="500000"
             value={budget}
             onChange={(event) => setBudget(Number(event.target.value))}
-            className="w-full accent-teal-700"
+            className="w-full accent-slate-700 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus:outline-none focus-visible:outline-none focus:ring-4 focus:ring-slate-200/60 focus:border-slate-400"
           />
           <div className="flex flex-wrap gap-2">
             {BUDGET_PRESETS.map((preset) => (
@@ -242,10 +242,10 @@ const PlannerForm = ({
                 aria-pressed={budget === preset.value}
                 onClick={() => setBudget(preset.value)}
                 className={
-                  "rounded-lg border px-3 py-2 text-xs " +
+                  "rounded-lg border px-3 py-2 text-xs transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80 disabled:hover:translate-y-0 disabled:hover:shadow-none " +
                   (budget === preset.value
-                    ? "border-teal-200 bg-teal-50 text-teal-800"
-                    : "border-slate-200 bg-white text-slate-600")
+                    ? "border-slate-200 bg-slate-50 text-slate-800 "
+                    : "border-slate-100 bg-white text-slate-600 ")
                 }
               >
                 {preset.label}
@@ -254,7 +254,9 @@ const PlannerForm = ({
           </div>
         </div>
         <div className="space-y-3 lg:col-span-2">
-          <h3 className="text-sm">Sở thích & phong cách du lịch</h3>
+          <h3 className="text-sm text-slate-800 ">
+            Sở thích & phong cách du lịch
+          </h3>
           <div className="flex flex-wrap gap-2">
             {INTEREST_OPTIONS.map((item) => (
               <button
@@ -263,10 +265,10 @@ const PlannerForm = ({
                 aria-pressed={selectedInterests.includes(item.id)}
                 onClick={() => handleToggleInterest(item.id)}
                 className={
-                  "rounded-xl border px-3 py-2.5 text-xs " +
+                  "rounded-xl border px-3 py-2.5 text-xs transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80 disabled:hover:translate-y-0 disabled:hover:shadow-none " +
                   (selectedInterests.includes(item.id)
-                    ? "border-teal-200 bg-teal-50 text-teal-800"
-                    : "border-slate-200 text-slate-600 hover:bg-slate-50")
+                    ? "border-slate-200 bg-slate-50 text-slate-800 "
+                    : "border-slate-100 text-slate-600 hover:bg-slate-50 ")
                 }
               >
                 {item.icon} {item.label}

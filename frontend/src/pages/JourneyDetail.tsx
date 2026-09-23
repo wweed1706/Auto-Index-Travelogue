@@ -32,25 +32,31 @@ export default function JourneyDetail() {
     return (
       <EmptyState>
         Không tìm thấy chuyến đi.{" "}
-        <Link to="/gallery" className="text-teal-700 underline">
+        <Link
+          to="/gallery"
+          className="text-slate-700 underline transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80"
+        >
           Về Gallery
         </Link>
       </EmptyState>
     );
   return (
     <div className="space-y-6">
-      <Link to="/gallery" className="text-sm text-teal-700">
+      <Link
+        to="/gallery"
+        className="text-sm text-slate-700 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80"
+      >
         ← Gallery / Lịch sử
       </Link>
       <PageHeading
         title={journey.title}
         description={journey.location + " · " + journey.date}
       />
-      <p className="rounded-xl bg-teal-50/60 p-4 text-sm text-teal-800">
+      <p className="rounded-xl bg-slate-50/60 p-4 text-sm text-slate-800 ">
         Đã lưu trên thiết bị. Nội dung chưa được AI phân tích.
       </p>
       {journey.notes && (
-        <p className="whitespace-pre-wrap rounded-2xl border border-slate-200 bg-white p-5 text-sm leading-7">
+        <p className="whitespace-pre-wrap rounded-2xl border border-slate-100 bg-white p-5 text-sm leading-7 shadow-sm">
           {journey.notes}
         </p>
       )}
@@ -61,10 +67,10 @@ export default function JourneyDetail() {
             aria-pressed={tab === value}
             onClick={() => setTab(value)}
             className={
-              "rounded-xl px-4 py-2.5 text-sm " +
+              "rounded-xl px-4 py-2.5 text-sm transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80 disabled:hover:translate-y-0 disabled:hover:shadow-none " +
               (tab === value
-                ? "bg-teal-50 text-teal-800"
-                : "bg-white text-slate-500")
+                ? "bg-slate-50 text-slate-800 "
+                : "bg-white text-slate-500 ")
             }
           >
             {value === "gallery"
@@ -113,7 +119,7 @@ export default function JourneyDetail() {
             }
             target="_blank"
             rel="noreferrer"
-            className="text-teal-700 underline"
+            className="text-slate-700 underline transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80"
           >
             Tìm địa điểm trên Google Maps
           </a>

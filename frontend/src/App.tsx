@@ -44,8 +44,13 @@ export default function App() {
             path="*"
             element={
               <div className="space-y-4">
-                <h1 className="text-2xl font-semibold">Không tìm thấy trang</h1>
-                <a href="/" className="text-teal-700 underline">
+                <h1 className="text-2xl font-semibold text-slate-800 ">
+                  Không tìm thấy trang
+                </h1>
+                <a
+                  href="/"
+                  className="text-slate-700 underline transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80"
+                >
                   Về Trang chủ
                 </a>
               </div>
