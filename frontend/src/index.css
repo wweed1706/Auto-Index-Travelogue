@@ -4,70 +4,9 @@
 
 @layer base {
   body {
-    @apply bg-slate-50 text-slate-800 font-sans;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    @apply bg-slate-50 font-sans text-slate-700 antialiased;
   }
-}
-
-/* Custom travel gradient overlays and glassmorphism */
-.glass-panel {
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.4);
-}
-
-.glass-panel-dark {
-  background: rgba(15, 23, 42, 0.65);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-/* Subtle Shimmer for placeholders */
-@keyframes shimmer {
-  0% {
-    background-position: -200% 0;
+  :focus-visible {
+    @apply outline outline-2 outline-offset-2 outline-teal-600;
   }
-  100% {
-    background-position: 200% 0;
-  }
-}
-
-.animate-shimmer {
-  background: linear-gradient(90deg, rgba(241, 245, 249, 0.6) 0%, rgba(226, 232, 240, 0.9) 50%, rgba(241, 245, 249, 0.6) 100%);
-  background-size: 200% 100%;
-  animation: shimmer 2s infinite ease-in-out;
-}
-
-/* Subtle fade in up animation for timeline nodes */
-@keyframes fadeInUp {
-  from {
-    opacity: 0;
-    transform: translateY(16px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.animate-fade-in-up {
-  animation: fadeInUp 0.45s ease-out forwards;
-}
-
-/* Smooth custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-::-webkit-scrollbar-track {
-  background: transparent;
-}
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 9999px;
-}
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
 }
