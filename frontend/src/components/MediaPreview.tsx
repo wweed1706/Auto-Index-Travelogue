@@ -1,38 +1,27 @@
-import { useEffect, useState } from "react";
 import type { MediaItem } from "../types";
+import { useBlobUrl } from "../hooks/useMedia";
 export default function MediaPreview({ item }: { item: MediaItem }) {
-  const [url, setUrl] = useState("");
-  useEffect(() => {
-    const next = URL.createObjectURL(item.blob);
-    setUrl(next);
-    return () => URL.revokeObjectURL(next);
-  }, [item.blob]);
-  if (!url) return null;
+  const url = useBlobUrl(item.blob);
   return (
-    <figure className="min-w-0 overflow-hidden rounded-xl border border-slate-200/70 bg-white p-2 shadow-sm transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 ">
+    <figure className="card min-w-0 overflow-hidden p-3">
       {item.kind === "image" ? (
         <img
           src={url}
           alt={item.name}
-          className="h-48 w-full rounded-lg object-cover transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none"
           loading="lazy"
+          className="h-48 w-full rounded-xl object-cover"
         />
       ) : item.kind === "video" ? (
         <video
           aria-label={item.name}
           src={url}
           controls
-          className="h-48 w-full rounded-lg"
+          className="w-full rounded-xl"
         />
       ) : (
-        <audio
-          aria-label={item.name}
-          src={url}
-          controls
-          className="max-w-full"
-        />
+        <audio aria-label={item.name} src={url} controls className="w-full" />
       )}
-      <figcaption className="truncate p-2 text-xs text-slate-500 ">
+      <figcaption className="mt-3 truncate text-xs text-slate-500">
         {item.name}
       </figcaption>
     </figure>

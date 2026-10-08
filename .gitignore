@@ -144,6 +144,19 @@ vite.config.ts.timestamp-*
 .vite/
 
 # Agent Rules & Instructions (Local Only)
-/plan.md
-/.rules
+plan.md
+PLAN.md
+.rules
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+.cursorrules
+.windsurfrules
+.clinerules
+.aider*
+.codex/
+.agents/
+.claude/
+.cursor/
+.windsurf/
 

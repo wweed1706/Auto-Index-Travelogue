@@ -1,133 +1,84 @@
-import type { Place } from "../types";
-import React, { useState } from "react";
+import { useState } from "react";
+import type { Place, PlaceCategory } from "../types";
 import PlaceCard from "./PlaceCard";
-import { Hotel, Utensils, Camera, Compass, Sparkles } from "./Icons";
-
-// Dữ liệu mẫu phong phú về các địa điểm đề xuất theo 4 phân loại
-
-/**
- * RecommendationList Component (Thuộc Task 18 - Đề xuất địa điểm)
- * Giao diện: Phân loại bằng Tabs: [Khách sạn] - [Nhà hàng] - [Check-in] - [Hoạt động]
- * Hiển thị danh sách thẻ địa điểm (PlaceCard) thích ứng và tương tác thêm vào lịch trình
- */
-const RecommendationList = ({
-  recommendations = [],
+import { Badge, EmptyState } from "./ui";
+import { categoryLabels } from "../services/catalog";
+export default function RecommendationList({
+  recommendations,
   onAddPlace,
-  addedPlaceIds = [],
+  addedPlaceIds,
+  selectedDay,
+  disabled,
 }: {
-  recommendations?: Place[];
-  onAddPlace?: (place: Place) => void;
-  addedPlaceIds?: string[];
-}) => {
-  const [activeCategory, setActiveCategory] = useState("hotel");
-  const addedIds = new Set(addedPlaceIds);
-
-  const categories = [
-    { id: "hotel", label: "Khách sạn", icon: Hotel },
-    { id: "restaurant", label: "Nhà hàng", icon: Utensils },
-    { id: "checkin", label: "Check-in", icon: Camera },
-    { id: "activity", label: "Hoạt động", icon: Compass },
-  ];
-
-  // Đảm bảo luôn có mảng danh sách hợp lệ, không bao giờ bị crash do null/undefined
-  const placesList =
-    Array.isArray(recommendations) && recommendations.length > 0
+  recommendations: Place[];
+  onAddPlace: (place: Place) => void;
+  addedPlaceIds: string[];
+  selectedDay: number;
+  disabled: boolean;
+}) {
+  const [category, setCategory] = useState<PlaceCategory | "all">("all");
+  const filtered =
+    category === "all"
       ? recommendations
-      : [];
-
-  // Lọc địa điểm theo category đang chọn với optional chaining
-  const filteredPlaces = placesList.filter(
-    (place) => place?.category === activeCategory,
-  );
-
-  const handleAddPlace = (place: Place) => {
-    if (!place?.id) return;
-    if (onAddPlace) {
-      onAddPlace(place);
-    }
-  };
-
+      : recommendations.filter((place) => place.category === category);
   return (
-    <section aria-label="Đề xuất địa điểm" className="space-y-6">
-      {/* Tiêu đề phần đề xuất */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="space-y-1">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-bold">
-            <Sparkles className="w-3.5 h-3.5 text-slate-600/90 " />
-            <span>Địa điểm</span>
-          </div>
-          <h3 className="text-xl sm:text-2xl font-bold text-slate-800 tracking-tight">
-            Địa điểm gợi ý cho bạn
-          </h3>
-          <p className="text-xs sm:text-sm text-slate-500 ">
-            Các địa điểm được cung cấp cho kế hoạch của bạn.
+    <section aria-label="Đề xuất địa điểm" className="min-w-0 space-y-5">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">
+            Những điểm dừng gợi ý
+          </h2>
+          <p className="mt-2 text-xs leading-5 text-slate-500">
+            Dành cho điểm đến và sở thích của bạn.
           </p>
         </div>
-
-        {/* Số lượng địa điểm đã thêm */}
-        {addedIds.size > 0 && (
-          <div className="text-xs font-bold text-slate-700 bg-slate-50 px-3.5 py-1.5 rounded-full border border-slate-200 ">
-            ✓ Đã thêm {addedIds.size} địa điểm vào lịch trình
-          </div>
+        <Badge demo>Demo</Badge>
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {(["all", "checkin", "restaurant", "activity", "hotel"] as const).map(
+          (value) => (
+            <button
+              type="button"
+              key={value}
+              aria-pressed={value === category}
+              onClick={() => setCategory(value)}
+              className={`rounded-lg border px-3 py-2 text-[11px] font-medium transition-all duration-300 hover:-translate-y-0.5 ${value === category ? "border-teal-200 bg-teal-50 text-teal-800" : "border-slate-200 bg-white text-slate-500 hover:border-slate-300"}`}
+            >
+              {value === "all" ? "Tất cả" : categoryLabels[value]}
+            </button>
+          ),
         )}
       </div>
-
-      {/* THANH ĐIỀU HƯỚNG TABS: [Khách sạn] - [Nhà hàng] - [Check-in] - [Hoạt động] */}
-      <div className="grid grid-cols-1 gap-2 rounded-2xl bg-slate-100/80 p-1.5 sm:grid-cols-2 xl:grid-cols-4">
-        {categories.map((cat) => {
-          const Icon = cat.icon;
-          const isActive = activeCategory === cat.id;
-          const count = placesList.filter((p) => p?.category === cat.id).length;
-
-          return (
-            <button
-              key={cat.id}
-              aria-pressed={isActive}
-              onClick={() => setActiveCategory(cat.id)}
-              className={`min-w-0 py-2.5 px-3.5 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 whitespace-nowrap transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80 disabled:hover:translate-y-0 disabled:hover:shadow-none ${
-                isActive
-                  ? "bg-white text-slate-900 shadow-sm "
-                  : "text-slate-600 hover:text-slate-800 hover:bg-white/50 "
-              }`}
-            >
-              <Icon
-                className={`w-4 h-4 ${isActive ? "text-slate-600/90 " : "text-slate-400 "}`}
-              />
-              <span>{cat.label}</span>
-              <span
-                className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                  isActive
-                    ? "bg-slate-100 text-slate-800 "
-                    : "bg-slate-200 text-slate-500 "
-                }`}
-              >
-                {count}
-              </span>
-            </button>
-          );
-        })}
-      </div>
-
-      {/* LƯỚI CARD ĐỊA ĐIỂM (PLACE CARDS) */}
-      {filteredPlaces.length === 0 ? (
-        <div className="p-5 sm:p-8 text-center bg-white rounded-2xl border border-slate-200/70 text-slate-500 shadow-sm transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 ">
-          Chưa có đề xuất trong danh mục này. Dịch vụ AI và Google Places đang
-          chờ kết nối.
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
-          {filteredPlaces.map((place) => (
+      {filtered.length ? (
+        <div className="space-y-3">
+          {filtered.map((place) => (
             <PlaceCard
               key={place.id}
               place={place}
-              onAddToPlan={handleAddPlace}
-              isAdded={addedIds.has(place.id)}
+              onAddToPlan={onAddPlace}
+              isAdded={addedPlaceIds.includes(place.id)}
+              day={selectedDay}
+              disabled={disabled}
             />
           ))}
         </div>
+      ) : (
+        <EmptyState
+          title={
+            recommendations.length
+              ? "Chưa có gợi ý trong nhóm này"
+              : "Điểm đến mới, câu chuyện mới."
+          }
+        >
+          {recommendations.length
+            ? "Chọn nhóm khác để khám phá thêm."
+            : "Catalog demo chưa có điểm đến này. Dùng nút Thêm hoạt động để tự tạo lịch trình."}
+        </EmptyState>
       )}
+      <p className="px-1 text-[10px] leading-5 text-slate-500">
+        Độ phù hợp và giá là mô phỏng từ catalog cục bộ. Cùng một địa điểm có
+        thể được thêm vào các ngày khác nhau.
+      </p>
     </section>
   );
-};
-
-export default RecommendationList;
+}

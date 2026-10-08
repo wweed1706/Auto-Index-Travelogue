@@ -1,216 +1,376 @@
-import { useState, type FormEvent } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { useState } from "react";
+import { Link, useParams, useSearchParams } from "react-router-dom";
+import { usePlanner } from "../hooks/usePlanner";
 import PlannerForm from "../components/PlannerForm";
 import PlannerItinerary from "../components/PlannerItinerary";
-import { usePlanner } from "../hooks/usePlanner";
+import RecommendationList from "../components/RecommendationList";
+import ActivityEditor from "../components/ActivityEditor";
+import Modal from "../components/Modal";
+import MapView from "../components/MapView";
+import DestinationArt from "../components/DestinationArt";
 import {
   PageHeading,
-  buttonClass,
-  inputClass,
-  ErrorNotice,
   EmptyState,
+  ErrorNotice,
+  Skeleton,
+  Badge,
+  Spinner,
 } from "../components/ui";
-import RecommendationList from "../components/RecommendationList";
-import type { PlannerInput, Place } from "../types";
-export default function SmartPlanner() {
+import {
+  Plus,
+  ArrowLeft,
+  ArrowRight,
+  Calendar,
+  X,
+  Map,
+  CheckCircle,
+} from "../components/Icons";
+import { displayDate, money } from "../services/utils";
+import { findDestination } from "../services/catalog";
+import type { Activity } from "../types";
+export default function SmartPlanner({
+  newPlan = false,
+}: {
+  newPlan?: boolean;
+}) {
   const { id } = useParams();
-  const {
-    itineraries,
-    create,
-    addActivity: saveActivity,
-    loading,
-    error: loadError,
-  } = usePlanner();
-  const navigate = useNavigate();
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  const plan = itineraries.find((p) => p.id === id);
-  async function generate(input: PlannerInput) {
-    setSaving(true);
-    setError("");
-    try {
-      const next = await create(input);
-      navigate("/planner/" + next.id);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể tạo kế hoạch.");
-    } finally {
-      setSaving(false);
-    }
-  }
-  async function addActivity(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (!plan || saving) return;
-    const form = event.currentTarget;
-    const data = new FormData(form);
-    const day = Number(data.get("day"));
-    if (!String(data.get("location") || "").trim()) {
-      setError("Vui lòng nhập địa điểm hoặc hoạt động.");
-      return;
-    }
-    setSaving(true);
-    setError("");
-    try {
-      await saveActivity(plan, day, {
-        time: String(data.get("time")),
-        location: String(data.get("location")).trim(),
-        aiNote: String(data.get("notes") || ""),
-        typeLabel: "Tự thêm",
-      });
-      form.reset();
-    } catch (err) {
-      setError(
-        err instanceof Error ? err.message : "Không thể thêm hoạt động.",
-      );
-    } finally {
-      setSaving(false);
-    }
-  }
-  async function addPlace(place: Place) {
-    if (!plan || saving) return;
-    setSaving(true);
-    setError("");
-    try {
-      await saveActivity(plan, 1, {
-        placeId: place.id,
-        time: "09:00",
-        location: place.name,
-        cost: place.cost,
-        image: place.coverImage,
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể thêm địa điểm.");
-    } finally {
-      setSaving(false);
-    }
-  }
-  if (id && loading) return <p role="status">Đang đọc kế hoạch…</p>;
-  if (id && !plan)
+  const [params] = useSearchParams();
+  const data = usePlanner(id);
+  const [editor, setEditor] = useState<Activity | "new" | null>(null);
+  const [editingCriteria, setEditingCriteria] = useState(false);
+  const [mobileView, setMobileView] = useState("itinerary");
+  const [mapVisible, setMapVisible] = useState(false);
+  const move = (activityId: string, day: number, beforeId?: string) => {
+    void data.move(activityId, day, beforeId).then((success) => {
+      if (success) data.selectDay(day);
+    });
+  };
+  if (newPlan)
     return (
       <>
-        <ErrorNotice message={loadError} />
-        <EmptyState>
-          Không tìm thấy kế hoạch.{" "}
-          <Link
-            to="/gallery"
-            className="text-slate-700 underline transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80"
-          >
-            Về Gallery
-          </Link>
-        </EmptyState>
+        <Link
+          to="/planner"
+          className="mb-6 inline-flex items-center gap-2 text-xs text-slate-500 hover:text-teal-700"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Tất cả kế hoạch
+        </Link>
+        <PageHeading
+          eyebrow="THE NEXT CHAPTER"
+          title="Một ý tưởng. Một hành trình."
+          description="Chọn điểm đến và nhịp đi của bạn. Chúng ta sẽ bắt đầu từ đó."
+          action={<Badge demo>Đề xuất mô phỏng</Badge>}
+        />
+        <ErrorNotice message={data.error || data.mutationError} />
+        <div className="mt-5 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_280px]">
+          <PlannerForm
+            onSubmit={data.create}
+            destination={params.get("destination") || ""}
+          />
+          <aside className="card space-y-5 p-6 xl:sticky xl:top-24">
+            <Calendar className="h-6 w-6 text-teal-700" />
+            <h2 className="text-sm font-semibold">
+              Lịch trình theo nhịp của bạn
+            </h2>
+            <p className="text-xs leading-6 text-slate-500">
+              Bắt đầu với gợi ý hoặc một trang trống. Thêm điểm dừng, chuyển
+              ngày và điều chỉnh giờ bất cứ lúc nào.
+            </p>
+            <div className="border-t border-slate-200 pt-4 text-[11px] leading-6 text-slate-500">
+              Catalog hiện có 6 điểm đến mẫu. Địa điểm khác vẫn có thể lên kế
+              hoạch thủ công.
+            </div>
+          </aside>
+        </div>
       </>
     );
-  return (
-    <div className="space-y-6">
-      <PageHeading
-        title="Lên kế hoạch du lịch"
-        description="Bắt đầu từ mong muốn của bạn, sắp xếp từng ngày theo nhịp đi riêng."
-      />
-      <ErrorNotice message={error || loadError} />
-      {!plan ? (
-        <>
-          <p className="rounded-xl border border-slate-100 bg-white p-4 text-sm leading-7 text-slate-500 shadow-sm">
-            Bạn có thể tạo và lưu bản nháp, thêm hoạt động theo giờ. Đề xuất địa
-            điểm và tạo lịch trình bằng AI đang chờ kết nối.
-          </p>
-          <PlannerForm onSubmit={generate} isLoading={saving} />
-        </>
-      ) : (
-        <>
-          <section className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-6 shadow-sm transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 ">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <h2 className="text-xl font-semibold text-slate-800 ">
-                {plan.criteria.destination}
-              </h2>
-              <Link
-                className="text-sm text-slate-700 underline transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80"
-                to="/planner"
-              >
-                Tạo kế hoạch khác
-              </Link>
-            </div>
-            <p className="text-sm text-slate-500 ">
-              {plan.criteria.startDate} · {plan.criteria.endDate} ·{" "}
-              {plan.criteria.travelers} người ·{" "}
-              {plan.criteria.budget.toLocaleString("vi-VN")} đ/người
-            </p>
-            <p className="text-sm">
-              Sở thích: {plan.criteria.interests.join(", ")}
-            </p>
-            {plan.criteria.dislikes && (
-              <p className="text-sm">
-                Điều cần tránh: {plan.criteria.dislikes}
-              </p>
-            )}
-            <p
-              role="status"
-              className="text-xs text-slate-700 "
-            >
-              Đã lưu bản nháp trên thiết bị
-            </p>
-            <Link
-              to="/gallery"
-              className="inline-block text-sm text-slate-700 underline transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80"
-            >
-              Xem trong Gallery
+  if (data.loading) return <Skeleton />;
+  if (data.error)
+    return (
+      <ErrorNotice message={data.error} onRetry={() => void data.reload()} />
+    );
+  if (!id)
+    return (
+      <>
+        <PageHeading
+          eyebrow="YOUR NEXT ADVENTURES"
+          title="Những chuyến đi phía trước."
+          description="Một nơi cho mọi ý tưởng du lịch. Mở lại kế hoạch và tiếp tục từ nơi bạn dừng."
+          action={
+            <Link to="/planner/new" className="btn-primary">
+              <Plus className="h-4 w-4" />
+              Tạo kế hoạch mới
             </Link>
-          </section>
-          <PlannerItinerary key={plan.id} days={plan.days} />
-          <form
-            onSubmit={addActivity}
-            className="space-y-4 rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 "
+          }
+        />
+        <ErrorNotice message={data.mutationError} />
+        {data.itineraries.length ? (
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
+            {data.itineraries.map((plan) => (
+              <article
+                key={plan.id}
+                className="interactive-card group relative overflow-hidden"
+              >
+                <Link to={"/planner/" + plan.id} className="block">
+                  <DestinationArt
+                    variant={findDestination(plan.criteria.destination)?.symbol}
+                    className="h-32 w-full"
+                  />
+                  <div className="p-5">
+                    <p className="text-[10px] text-slate-500">
+                      {displayDate(plan.criteria.startDate)}
+                    </p>
+                    <h2 className="mt-2 text-base font-semibold tracking-tight">
+                      {plan.criteria.destination}
+                    </h2>
+                    <p className="mt-3 text-xs text-slate-500">
+                      {plan.days.length} ngày · {plan.criteria.travelers} người
+                    </p>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {money(plan.criteria.budget)} / người
+                    </p>
+                    <div className="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
+                      <span className="text-[11px] text-slate-500">
+                        {plan.days.reduce(
+                          (count, day) => count + day.activities.length,
+                          0,
+                        )}{" "}
+                        hoạt động đã lưu
+                      </span>
+                      <ArrowRight className="h-4 w-4 text-teal-700" />
+                    </div>
+                  </div>
+                </Link>
+                <button
+                  type="button"
+                  disabled={data.saving}
+                  aria-label={"Xóa kế hoạch " + plan.criteria.destination}
+                  onClick={() => void data.deletePlan(plan.id)}
+                  className="absolute right-3 top-3 rounded-lg border border-white/70 bg-white/95 p-2 text-slate-500 hover:bg-rose-50 hover:text-rose-700 transition-all duration-300"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            title="Chuyến đi tiếp theo bắt đầu từ đây."
+            action={
+              <Link to="/planner/new" className="btn-primary">
+                <Plus className="h-4 w-4" />
+                Tạo kế hoạch đầu tiên
+              </Link>
+            }
           >
-            <h2 className="font-semibold text-slate-800 ">
-              Thêm hoạt động vào lịch trình
-            </h2>
-            <fieldset disabled={saving} className="grid gap-4 lg:grid-cols-2">
-              <label className="text-sm">
-                Ngày
-                <select name="day" className={inputClass}>
-                  {plan.days.map((d) => (
-                    <option key={d.dayNumber} value={d.dayNumber}>
-                      Ngày {d.dayNumber} · {d.date}
-                    </option>
-                  ))}
-                </select>
-              </label>
-              <label className="text-sm">
-                Giờ
-                <input
-                  name="time"
-                  required
-                  type="time"
-                  className={inputClass}
-                />
-              </label>
-              <label className="text-sm">
-                Địa điểm / Hoạt động
-                <input
-                  name="location"
-                  required
-                  maxLength={200}
-                  className={inputClass}
-                />
-              </label>
-              <label className="text-sm">
-                Ghi chú
-                <input name="notes" className={inputClass} />
-              </label>
-              <button disabled={saving} className={buttonClass}>
-                {saving ? "Đang lưu…" : "Thêm và lưu hoạt động"}
-              </button>
-            </fieldset>
-          </form>
-          <RecommendationList
-            recommendations={[]}
-            onAddPlace={(place) => void addPlace(place)}
-            addedPlaceIds={plan.days.flatMap((day) =>
+            Chưa có kế hoạch nào. Chọn điểm đến, chúng ta sẽ dành chỗ cho những
+            trải nghiệm mới.
+          </EmptyState>
+        )}
+      </>
+    );
+  const plan = data.plan;
+  if (!plan)
+    return (
+      <EmptyState
+        title="Không tìm thấy kế hoạch."
+        action={
+          <Link to="/planner" className="btn-secondary">
+            Về kế hoạch
+          </Link>
+        }
+      >
+        Kế hoạch đã được xóa hoặc không thuộc không gian này.
+      </EmptyState>
+    );
+  return (
+    <>
+      <Link
+        to="/planner"
+        className="mb-6 inline-flex items-center gap-2 text-xs text-slate-500 hover:text-teal-700"
+      >
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Tất cả kế hoạch
+      </Link>
+      <PageHeading
+        eyebrow="LET'S MAKE IT YOURS"
+        title={plan.criteria.destination}
+        description={
+          displayDate(plan.criteria.startDate) +
+          " — " +
+          displayDate(plan.criteria.endDate) +
+          " · " +
+          plan.days.length +
+          " ngày · " +
+          plan.criteria.travelers +
+          " người"
+        }
+        action={
+          <>
+            <button
+              type="button"
+              disabled={data.saving}
+              onClick={() => setEditingCriteria(true)}
+              className="btn-secondary"
+            >
+              Chỉnh tiêu chí
+            </button>
+            <button
+              type="button"
+              onClick={() => setMapVisible(!mapVisible)}
+              aria-pressed={mapVisible}
+              className="btn-secondary"
+            >
+              <Map className="h-4 w-4" />
+              Bản đồ
+            </button>
+          </>
+        }
+      />
+      <div className="card mb-7 flex flex-wrap items-center justify-between gap-4 px-5 py-4">
+        <div className="flex flex-wrap gap-x-7 gap-y-3">
+          <div>
+            <p className="text-[10px] text-slate-500">
+              Dự tính mỗi người · demo
+            </p>
+            <p className="mt-1 text-sm font-semibold text-slate-800">
+              {money(data.totalCost)}
+              <span className="ml-2 text-[11px] font-normal text-slate-500">
+                / {money(plan.criteria.budget)}
+              </span>
+            </p>
+          </div>
+          <div>
+            <p className="text-[10px] text-slate-500">Tổng nhóm</p>
+            <p className="mt-1 text-sm font-medium">
+              {money(data.totalCost * plan.criteria.travelers)}
+            </p>
+          </div>
+        </div>
+        <p
+          role="status"
+          className="flex items-center gap-2 text-[11px] text-slate-500"
+        >
+          {data.saving ? (
+            <Spinner />
+          ) : (
+            <CheckCircle className="h-4 w-4 text-teal-600" />
+          )}
+          {data.saving ? "Đang lưu thay đổi…" : "Đã lưu trên thiết bị"}
+        </p>
+      </div>
+      {data.totalCost > plan.criteria.budget && (
+        <p className="mb-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-xs text-amber-800">
+          Chi phí hoạt động đang vượt ngân sách mỗi người. Bạn có thể điều chỉnh
+          hoạt động hoặc tiêu chí.
+        </p>
+      )}
+      {plan.criteria.dislikes && (
+        <p className="mb-5 text-xs text-slate-500">
+          Điều cần tránh: {plan.criteria.dislikes}
+        </p>
+      )}
+      <ErrorNotice message={data.mutationError} />
+      {mapVisible && (
+        <div className="mb-7">
+          <MapView
+            points={plan.days.flatMap((day) =>
               day.activities.flatMap((activity) =>
-                activity.placeId ? [activity.placeId] : [],
+                activity.coordinates
+                  ? [
+                      {
+                        id: activity.id,
+                        name: activity.location,
+                        coordinates: activity.coordinates,
+                      },
+                    ]
+                  : [],
               ),
             )}
           />
-        </>
+        </div>
       )}
-    </div>
+      <div className="mb-6 mt-5 flex gap-1 rounded-xl border border-slate-200 bg-white p-1 xl:hidden">
+        {[
+          { id: "itinerary", label: "Lịch trình" },
+          { id: "recommendations", label: "Đề xuất" },
+        ].map((tab) => (
+          <button
+            type="button"
+            key={tab.id}
+            aria-pressed={mobileView === tab.id}
+            onClick={() => setMobileView(tab.id)}
+            className={`min-h-10 flex-1 rounded-lg px-3 text-xs font-medium transition-all duration-300 ${mobileView === tab.id ? "bg-teal-50 text-teal-800" : "text-slate-500 hover:bg-slate-50"}`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+      <div className="mt-6 grid items-start gap-8 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+        <div
+          className={`min-w-0 ${mobileView === "recommendations" ? "" : "hidden xl:block"}`}
+        >
+          <RecommendationList
+            recommendations={data.recommendations}
+            onAddPlace={(place) => void data.addPlace(place)}
+            addedPlaceIds={data.addedPlaceIds}
+            selectedDay={data.selectedDay}
+            disabled={data.saving}
+          />
+        </div>
+        <div
+          className={`min-w-0 ${mobileView === "itinerary" ? "" : "hidden xl:block"}`}
+        >
+          <PlannerItinerary
+            days={plan.days}
+            selectedDay={data.selectedDay}
+            onSelect={data.selectDay}
+            onMove={move}
+            onEdit={setEditor}
+            onRemove={(activityId) => void data.remove(activityId)}
+            onAdd={() => setEditor("new")}
+            conflicts={data.conflicts}
+            disabled={data.saving}
+          />
+        </div>
+      </div>
+      {editor && (
+        <Modal
+          title={
+            editor === "new"
+              ? "Thêm hoạt động · Ngày " + data.selectedDay
+              : "Chỉnh sửa hoạt động"
+          }
+          onClose={() => setEditor(null)}
+        >
+          <ErrorNotice message={data.mutationError} />
+          <ActivityEditor
+            activity={editor === "new" ? undefined : editor}
+            time={data.suggestedTime}
+            onSave={async (activity) => {
+              const success = await data.saveActivity(activity);
+              if (success) setEditor(null);
+              return success;
+            }}
+          />
+        </Modal>
+      )}
+      {editingCriteria && (
+        <Modal
+          title="Chỉnh tiêu chí chuyến đi"
+          onClose={() => setEditingCriteria(false)}
+        >
+          <ErrorNotice message={data.mutationError} />
+          <PlannerForm
+            initial={plan.criteria}
+            onSubmit={async (input) => {
+              const success = await data.changeCriteria(input);
+              if (success) setEditingCriteria(false);
+              return success;
+            }}
+          />
+        </Modal>
+      )}
+    </>
   );
 }

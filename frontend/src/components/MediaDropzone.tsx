@@ -1,22 +1,26 @@
 import { useRef, useState } from "react";
 import type { useMediaUpload } from "../hooks/useMediaUpload";
-import { UploadCloud } from "./Icons";
+import { UploadCloud, X, Plus, Image, CheckCircle } from "./Icons";
 import { ErrorNotice } from "./ui";
 export default function MediaDropzone({
   media,
+  disabled = false,
 }: {
   media: ReturnType<typeof useMediaUpload>;
+  disabled?: boolean;
 }) {
   const input = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
+  const depth = useRef(0);
   return (
     <div className="space-y-4">
       <input
         ref={input}
         type="file"
         aria-label="Chọn media"
-        className="sr-only transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus:outline-none focus-visible:outline-none focus:ring-4 focus:ring-slate-200/60 focus:border-slate-400"
+        className="sr-only"
         multiple
+        disabled={disabled}
         accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,audio/mpeg,audio/wav,audio/ogg,audio/mp4,audio/aac"
         onChange={(event) => {
           if (event.target.files) media.add(event.target.files);
@@ -25,82 +29,109 @@ export default function MediaDropzone({
       />
       <button
         type="button"
+        disabled={disabled}
         onClick={() => input.current?.click()}
+        onDragEnter={(event) => {
+          event.preventDefault();
+          if (!disabled) {
+            depth.current++;
+            setDragging(true);
+          }
+        }}
         onDragOver={(event) => {
           event.preventDefault();
-          setDragging(true);
+          event.dataTransfer.dropEffect = disabled ? "none" : "copy";
         }}
-        onDragLeave={() => setDragging(false)}
+        onDragLeave={() => {
+          depth.current = Math.max(0, depth.current - 1);
+          if (!depth.current) setDragging(false);
+        }}
         onDrop={(event) => {
           event.preventDefault();
+          depth.current = 0;
           setDragging(false);
-          media.add(event.dataTransfer.files);
+          if (!disabled) media.add(event.dataTransfer.files);
         }}
-        className={
-          "flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed p-6 text-center sm:p-10 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80 disabled:hover:translate-y-0 disabled:hover:shadow-none " +
-          (dragging
-            ? "border-slate-500 bg-slate-50 "
-            : "border-slate-100 bg-slate-50/50 hover:bg-slate-50 ")
-        }
+        className={`flex min-h-56 w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed px-5 py-8 text-center transition-all duration-300 hover:-translate-y-1 hover:shadow-md disabled:opacity-50 motion-reduce:transform-none ${dragging ? "border-teal-600 bg-teal-50 ring-4 ring-teal-50" : "border-slate-300 bg-slate-50/60 hover:border-teal-500 hover:bg-teal-50/30"}`}
       >
-        <UploadCloud className="h-8 w-8 text-slate-600/90 " />
-        <span className="text-sm font-medium">Kéo thả hoặc chọn media</span>
-        <span className="text-xs leading-6 text-slate-500 ">
-          Ảnh JPG, PNG, WebP, GIF · Video MP4, WebM · Audio MP3, WAV, OGG, M4A,
-          AAC
+        <span className="mb-1 flex h-12 w-12 items-center justify-center rounded-xl border border-slate-200 bg-white text-teal-700 shadow-sm">
+          <UploadCloud className="h-6 w-6" />
+        </span>
+        <span className="text-sm font-medium text-slate-800">
+          {dragging ? "Thả để thêm vào chuyến đi" : "Kéo thả hoặc chọn media"}
+        </span>
+        <span className="max-w-sm text-xs leading-6 text-slate-500">
+          Ảnh, video, âm thanh · Tối đa 50 MB/tệp
           <br />
-          Tối đa 50 MB mỗi tệp
+          40 tệp, tổng dung lượng tối đa 200 MB
+        </span>
+        <span className="mt-1 inline-flex items-center gap-1.5 text-xs font-medium text-teal-700">
+          <Plus className="h-3 w-3" />
+          Chọn từ thiết bị
         </span>
       </button>
       <ErrorNotice message={media.error} />
       {media.files.length > 0 && (
         <>
-          <div className="flex justify-between text-sm">
-            <span>{media.files.length} tệp đã chọn</span>
+          <div className="flex items-center justify-between gap-3">
+            <p className="flex items-center gap-2 text-xs font-medium text-slate-600">
+              <CheckCircle className="h-4 w-4 text-teal-600" />
+              {media.files.length} tệp đã sẵn sàng
+            </p>
             <button
               type="button"
+              disabled={disabled}
               onClick={media.clear}
-              className="text-slate-500 underline transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+              className="text-xs text-slate-500 transition-colors hover:text-rose-700"
             >
               Xóa tất cả
             </button>
           </div>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
             {media.files.map((item) => (
               <div
                 key={item.id}
-                className="min-w-0 rounded-xl border border-slate-200/70 p-2 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 "
+                className="group relative min-w-0 overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
               >
-                {item.previewUrl &&
-                  (item.type.startsWith("image/") ? (
-                    <img
-                      src={item.previewUrl}
-                      alt={item.name}
-                      className="h-28 w-full rounded-lg object-cover transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none"
-                    />
-                  ) : item.isVideo ? (
-                    <video
-                      src={item.previewUrl}
-                      controls
-                      className="h-28 w-full"
-                    />
-                  ) : (
+                {item.type.startsWith("image/") ? (
+                  <img
+                    src={item.previewUrl || ""}
+                    alt={item.name}
+                    className="aspect-[4/3] w-full object-cover"
+                  />
+                ) : item.isVideo ? (
+                  <video
+                    aria-label={item.name}
+                    src={item.previewUrl || ""}
+                    controls
+                    className="aspect-[4/3] w-full bg-slate-100"
+                  />
+                ) : (
+                  <div className="flex aspect-[4/3] flex-col items-center justify-center gap-3 bg-slate-50 px-2">
+                    <Image className="h-5 w-5 text-teal-600" />
                     <audio
                       aria-label={item.name}
-                      src={item.previewUrl}
+                      src={item.previewUrl || ""}
                       controls
-                      className="w-full"
+                      className="h-8 w-full min-w-0"
                     />
-                  ))}
-                <p className="truncate py-2 text-xs">{item.name}</p>
+                  </div>
+                )}
                 <button
                   type="button"
+                  disabled={disabled}
                   aria-label={"Xóa " + item.name}
                   onClick={() => media.remove(item.id)}
-                  className="rounded-lg px-2 py-1 text-xs text-rose-700 hover:bg-rose-50 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 disabled:hover:translate-y-0 disabled:hover:shadow-none"
+                  className="absolute right-2 top-2 rounded-lg border border-slate-200 bg-white/95 p-1.5 text-slate-500 transition-all duration-300 hover:bg-rose-50 hover:text-rose-700"
                 >
-                  Xóa tệp
+                  <X className="h-3.5 w-3.5" />
                 </button>
+                <div className="p-2.5">
+                  <p className="truncate text-[11px] font-medium text-slate-700">
+                    {item.name}
+                  </p>
+                  <p className="mt-1 text-[10px] text-slate-500">{item.size}</p>
+                </div>
               </div>
             ))}
           </div>

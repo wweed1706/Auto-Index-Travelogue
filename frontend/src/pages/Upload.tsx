@@ -1,129 +1,304 @@
-import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
+import { useState } from "react";
+import { useUploadForm } from "../hooks/useUploadForm";
 import MediaDropzone from "../components/MediaDropzone";
-import { useMediaUpload } from "../hooks/useMediaUpload";
-import { useJourney } from "../hooks/useJourney";
 import {
   PageHeading,
-  inputClass,
-  buttonClass,
   ErrorNotice,
+  Field,
+  Badge,
+  Spinner,
+  Skeleton,
+  EmptyState,
 } from "../components/ui";
+import {
+  ArrowLeft,
+  Sparkles,
+  CheckCircle,
+  ArrowRight,
+} from "../components/Icons";
+import { destinations } from "../services/catalog";
+const stages = [
+  { id: "checking", label: "Chuẩn bị media" },
+  { id: "analyzing", label: "Sắp xếp ký ức" },
+  { id: "saving", label: "Lưu chuyến đi" },
+];
 export default function Upload() {
-  const media = useMediaUpload();
-  const { saveJourney } = useJourney();
-  const navigate = useNavigate();
-  const [saving, setSaving] = useState(false);
-  const [error, setError] = useState("");
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    if (saving) return;
-    const values = new FormData(event.currentTarget);
-    const notes = String(values.get("notes") || "").trim();
-    if (
-      !String(values.get("title") || "").trim() ||
-      !String(values.get("location") || "").trim()
-    ) {
-      setError("Vui lòng nhập tên chuyến đi và địa điểm.");
-      return;
-    }
-    if (!media.files.length && !notes) {
-      setError("Thêm ít nhất một tệp media hoặc ghi chú cho chuyến đi.");
-      return;
-    }
-    setSaving(true);
-    setError("");
-    try {
-      const id = crypto.randomUUID();
-      await saveJourney({
-        id,
-        title: String(values.get("title")).trim(),
-        location: String(values.get("location")).trim(),
-        date: String(values.get("date")),
-        notes,
-        tags: String(values.get("tags") || "")
-          .split(",")
-          .map((tag) => tag.trim())
-          .filter(Boolean),
-        createdAt: new Date().toISOString(),
-        media: media.files.map((item) => ({
-          id: item.id,
-          name: item.name,
-          blob: item.file,
-          kind: item.type.startsWith("image/")
-            ? "image"
-            : item.type.startsWith("video/")
-              ? "video"
-              : "audio",
-        })),
-      });
-      navigate(`/journey/${id}`);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Không thể lưu chuyến đi.");
-    } finally {
-      setSaving(false);
-    }
-  }
+  const { id } = useParams();
+  const form = useUploadForm(id);
+  const [more, setMore] = useState(Boolean(id));
+  if (!form.ready) return <Skeleton count={2} label="Đang mở bản nháp…" />;
+  if (id && !form.existing)
+    return (
+      <EmptyState
+        title="Không tìm thấy chuyến đi"
+        action={
+          <Link to="/gallery" className="btn-secondary">
+            Về thư viện
+          </Link>
+        }
+      />
+    );
+  const currentStage = stages.findIndex((stage) => stage.id === form.stage);
   return (
     <>
-      <PageHeading
-        title="Upload chuyến đi"
-        description="Giữ lại ảnh, video, âm thanh và những ghi chú trên đường. Media được lưu trên thiết bị; tính năng tự động lập chỉ mục AI sẽ được bổ sung sau."
-      />
-      <form
-        onSubmit={submit}
-        className="space-y-6 rounded-2xl border border-slate-200/70 bg-white p-4 sm:p-7 shadow-sm transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:shadow-lg hover:shadow-slate-900/5 hover:border-slate-300/80 "
+      <Link
+        to={id ? "/journey/" + id : "/gallery"}
+        className="mb-6 inline-flex items-center gap-2 text-xs text-slate-500 transition-colors hover:text-teal-700"
       >
-        <fieldset disabled={saving} className="space-y-6">
-          <div className="grid gap-5 lg:grid-cols-2">
-            <label className="text-sm">
-              Tên chuyến đi
-              <input
-                name="title"
-                required
-                maxLength={150}
-                className={inputClass}
-                placeholder="Một ngày ở Đà Lạt"
-              />
-            </label>
-            <label className="text-sm">
-              Địa điểm
-              <input
-                name="location"
-                required
-                className={inputClass}
-                placeholder="Đà Lạt, Lâm Đồng"
-              />
-            </label>
-            <label className="text-sm">
-              Ngày chuyến đi
-              <input name="date" required type="date" className={inputClass} />
-            </label>
-            <label className="text-sm">
-              Tags, phân cách bằng dấu phẩy
-              <input
-                name="tags"
-                className={inputClass}
-                placeholder="cafe, thiên nhiên"
-              />
-            </label>
+        <ArrowLeft className="h-3.5 w-3.5" />
+        {id ? "Về chuyến đi" : "Thư viện ký ức"}
+      </Link>
+      <PageHeading
+        eyebrow="CAPTURE A MOMENT"
+        title={id ? "Chỉnh sửa chuyến đi" : "Giữ lại một chuyến đi."}
+        description="Bắt đầu bằng những khoảnh khắc. Thêm vài dòng để câu chuyện trở nên trọn vẹn."
+        action={<Badge demo>AI mô phỏng</Badge>}
+      />
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_300px]">
+        <form
+          onSubmit={(event) => {
+            event.preventDefault();
+            void form.submit();
+          }}
+          className="card space-y-6 p-5 sm:p-7"
+        >
+          <fieldset disabled={form.busy} className="min-w-0 space-y-7">
+            {form.restored && (
+              <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-teal-50 px-4 py-3 text-xs text-teal-800">
+                <span>Đã khôi phục bản nháp của bạn.</span>
+                <button
+                  type="button"
+                  onClick={() => void form.discard()}
+                  className="font-medium underline"
+                >
+                  Bắt đầu lại
+                </button>
+              </div>
+            )}
+            <MediaDropzone media={form.media} disabled={form.busy} />
+            <div className="border-t border-slate-200 pt-6">
+              <p className="mb-4 text-sm font-medium text-slate-800">
+                Một chút về chuyến đi
+              </p>
+              <div className="grid gap-5 sm:grid-cols-2">
+                <Field label="Tên chuyến đi">
+                  <input
+                    required
+                    maxLength={150}
+                    value={form.input.title}
+                    onChange={(event) =>
+                      form.setField("title", event.target.value)
+                    }
+                    placeholder="Một ngày không vội"
+                    className="input"
+                  />
+                </Field>
+                <Field label="Địa điểm">
+                  <input
+                    required
+                    list="journey-destinations"
+                    value={form.input.location}
+                    onChange={(event) =>
+                      form.setField("location", event.target.value)
+                    }
+                    placeholder="Bạn đã đi đâu?"
+                    className="input"
+                  />
+                  <datalist id="journey-destinations">
+                    {destinations.map((destination) => (
+                      <option key={destination.id} value={destination.name} />
+                    ))}
+                  </datalist>
+                </Field>
+                <Field label="Ngày chuyến đi">
+                  <input
+                    required
+                    type="date"
+                    value={form.input.date}
+                    onChange={(event) =>
+                      form.setField("date", event.target.value)
+                    }
+                    className="input"
+                  />
+                </Field>
+                <Field label="Chủ đề" hint="Phân cách bằng dấu phẩy.">
+                  <input
+                    value={form.input.tags.join(",")}
+                    onChange={(event) =>
+                      form.setField("tags", event.target.value.split(","))
+                    }
+                    placeholder="Cafe, thiên nhiên"
+                    className="input"
+                  />
+                </Field>
+              </div>
+            </div>
+            <button
+              type="button"
+              aria-expanded={more}
+              onClick={() => setMore(!more)}
+              className="text-xs font-medium text-teal-700 hover:underline"
+            >
+              {more ? "− Thu gọn ghi chú & vị trí" : "+ Thêm ghi chú & vị trí"}
+            </button>
+            {more && (
+              <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4">
+                <Field label="Ghi chú">
+                  <textarea
+                    value={form.input.notes}
+                    onChange={(event) =>
+                      form.setField("notes", event.target.value)
+                    }
+                    rows={4}
+                    placeholder="Điều gì khiến bạn nhớ nhất?"
+                    className="input"
+                  />
+                </Field>
+                <details className="rounded-xl bg-slate-50 p-4">
+                  <summary className="cursor-pointer text-xs text-slate-600">
+                    Gắn tọa độ thủ công (tùy chọn)
+                  </summary>
+                  <div className="mt-4 grid gap-4 sm:grid-cols-2">
+                    <Field label="Vĩ độ">
+                      <input
+                        type="number"
+                        step="any"
+                        min={-90}
+                        max={90}
+                        value={form.input.coordinates?.latitude ?? ""}
+                        onChange={(event) =>
+                          form.setField(
+                            "coordinates",
+                            event.target.value
+                              ? {
+                                  latitude: Number(event.target.value),
+                                  longitude:
+                                    form.input.coordinates?.longitude ?? 0,
+                                }
+                              : undefined,
+                          )
+                        }
+                        className="input"
+                      />
+                    </Field>
+                    <Field label="Kinh độ">
+                      <input
+                        type="number"
+                        step="any"
+                        min={-180}
+                        max={180}
+                        value={form.input.coordinates?.longitude ?? ""}
+                        onChange={(event) =>
+                          form.setField(
+                            "coordinates",
+                            event.target.value
+                              ? {
+                                  longitude: Number(event.target.value),
+                                  latitude:
+                                    form.input.coordinates?.latitude ?? 0,
+                                }
+                              : undefined,
+                          )
+                        }
+                        className="input"
+                      />
+                    </Field>
+                  </div>
+                </details>
+              </div>
+            )}
+            <ErrorNotice message={form.error} />
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-200 pt-5">
+              <p role="status" className="text-[11px] text-slate-500">
+                {form.draftStatus || "Hỗ trợ cả nhật ký chỉ có ghi chú"}
+              </p>
+              <button disabled={form.busy} className="btn-primary">
+                {form.busy ? <Spinner /> : <Sparkles className="h-4 w-4" />}
+                {form.busy
+                  ? "Đang xử lý…"
+                  : id
+                    ? "Lưu thay đổi"
+                    : "Lưu chuyến đi"}
+              </button>
+            </div>
+          </fieldset>
+        </form>
+        <aside className="space-y-5 xl:sticky xl:top-24">
+          <div className="card p-6">
+            <span className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
+              <Sparkles className="h-5 w-5" />
+            </span>
+            <h2 className="text-sm font-semibold">
+              Từ khoảnh khắc đến câu chuyện
+            </h2>
+            <p className="mt-3 text-xs leading-6 text-slate-500">
+              Ảnh, video và âm thanh được sắp xếp cùng ghi chú của bạn trong một
+              chuyến đi.
+            </p>
+            <div className="mt-6 space-y-4">
+              {[
+                "Thư viện media gọn gàng",
+                "Timeline theo ngày",
+                "Vị trí trên bản đồ",
+              ].map((label) => (
+                <p
+                  key={label}
+                  className="flex items-center gap-2 text-xs text-slate-600"
+                >
+                  <CheckCircle className="h-4 w-4 text-teal-600" />
+                  {label}
+                </p>
+              ))}
+            </div>
+            <p className="mt-6 border-t border-slate-200 pt-4 text-[11px] leading-5 text-slate-500">
+              AI demo dùng thông tin bạn cung cấp, chưa nhận diện nội dung ảnh.
+            </p>
           </div>
-          <MediaDropzone media={media} />
-          <label className="block text-sm">
-            Ghi chú
-            <textarea
-              name="notes"
-              rows={4}
-              className={inputClass}
-              placeholder="Điều gì khiến bạn nhớ nhất về chuyến đi này?"
-            />
-          </label>
-          <ErrorNotice message={error} />
-          <button disabled={saving} className={buttonClass}>
-            {saving ? "Đang lưu…" : "Lưu chuyến đi"}
-          </button>
-        </fieldset>
-      </form>
+          {form.busy && (
+            <div
+              role="status"
+              aria-live="polite"
+              className="card space-y-4 p-6 animate-in fade-in"
+            >
+              <p className="text-sm font-medium">Đang chuẩn bị câu chuyện…</p>
+              {stages.map((stage, index) => (
+                <div
+                  key={stage.id}
+                  className={`flex items-center gap-3 text-xs ${index <= currentStage ? "text-teal-700" : "text-slate-400"}`}
+                >
+                  {index < currentStage ? (
+                    <CheckCircle className="h-4 w-4" />
+                  ) : index === currentStage ? (
+                    <Spinner />
+                  ) : (
+                    <span className="h-4 w-4 rounded-full border border-slate-200" />
+                  )}
+                  {stage.label}
+                </div>
+              ))}
+              {form.stage !== "saving" && (
+                <button
+                  type="button"
+                  onClick={form.cancel}
+                  className="text-xs text-slate-500 underline"
+                >
+                  Hủy xử lý
+                </button>
+              )}
+            </div>
+          )}
+          {!form.busy && (
+            <Link
+              to="/planner/new"
+              className="flex items-center justify-between px-1 text-xs text-slate-500 hover:text-teal-700 transition-colors"
+            >
+              Chuẩn bị chuyến đi tiếp theo
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          )}
+        </aside>
+      </div>
     </>
   );
 }

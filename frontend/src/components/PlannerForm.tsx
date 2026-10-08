@@ -1,301 +1,235 @@
-import { inputClass, buttonClass } from "./ui";
 import type { PlannerInput } from "../types";
-import React, { useState } from "react";
-
-// Danh sách gợi ý điểm đến phổ biến
-const POPULAR_DESTINATIONS = [
-  "Đà Lạt, Lâm Đồng",
-  "Phú Quốc, Kiên Giang",
-  "Hà Giang",
-  "Nha Trang, Khánh Hòa",
-  "Đà Nẵng - Hội An",
-  "Sa Pa, Lào Cai",
-];
-
-// Danh sách các sở thích du lịch (Interests tags)
-const INTEREST_OPTIONS = [
-  { id: "cafe", label: "Cafe view đẹp", icon: "☕" },
-  { id: "photo", label: "Chụp ảnh & Sống ảo", icon: "📸" },
-  { id: "nature", label: "Thiên nhiên & Trekking", icon: "🌲" },
-  { id: "food", label: "Ẩm thực & Đặc sản", icon: "🍜" },
-  { id: "culture", label: "Văn hóa & Lịch sử", icon: "🏛️" },
-  { id: "relax", label: "Nghỉ dưỡng & Chill", icon: "✨" },
-  { id: "cloud", label: "Săn mây & Bình minh", icon: "⛅" },
-  { id: "beach", label: "Biển đảo & Lặn ngắm", icon: "🌊" },
-];
-
-// Các mốc ngân sách gợi ý
-const BUDGET_PRESETS = [
-  { label: "Tiết kiệm", value: 3000000, desc: "Dưới 3 triệu" },
-  { label: "Tiêu chuẩn", value: 7000000, desc: "3 - 8 triệu" },
-  { label: "Nghỉ dưỡng", value: 15000000, desc: "Trên 8 triệu" },
-];
-
-/**
- * PlannerForm Component (Thuộc Task 17 - Form nhập liệu AI)
- * Bố cục: Thiết kế dạng Form nhiều cột (Card-based form) gọn gàng, không dàn trải
- * Các trường nhập liệu:
- * 1. Điểm đến (Search input có gợi ý)
- * 2. Thời gian đi (Date Range Picker)
- * 3. Ngân sách (Slider kéo thả kết hợp phân khúc giá)
- * 4. Sở thích (Thẻ Tags chọn nhiều)
- * 5. Nút Submit: Kích thước lớn, màu chủ đạo, text "Đang lưu kế hoạch…" kèm spinner khi loading
- */
-const PlannerForm = ({
+import { usePlannerForm } from "../hooks/usePlannerForm";
+import { destinations, interests } from "../services/catalog";
+import { money } from "../services/utils";
+import { Field, ErrorNotice, Spinner } from "./ui";
+import { ArrowRight, Calendar, Sparkles } from "./Icons";
+import DestinationArt from "./DestinationArt";
+export default function PlannerForm({
   onSubmit,
-  isLoading = false,
+  initial,
+  destination = "",
 }: {
-  onSubmit: (input: PlannerInput) => void;
-  isLoading?: boolean;
-}) => {
-  const [destination, setDestination] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [budget, setBudget] = useState(5000000);
-  const [selectedInterests, setSelectedInterests] = useState([
-    "cafe",
-    "nature",
-    "food",
-  ]);
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof PlannerInput, string | null>>
-  >({});
-  const [travelers, setTravelers] = useState(1);
-  const [dislikes, setDislikes] = useState("");
-
-  // Toggle chọn / bỏ chọn sở thích
-  const handleToggleInterest = (interestId: string) => {
-    setSelectedInterests((prev) => {
-      if (prev.includes(interestId)) {
-        return prev.filter((id) => id !== interestId);
-      } else {
-        return [...prev, interestId];
-      }
-    });
-    if (errors.interests) {
-      setErrors((prev) => ({ ...prev, interests: null }));
-    }
-  };
-
-  // Xử lý gửi Form với kiểm tra validation chặt chẽ theo SOP
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    const newErrors: Partial<Record<keyof PlannerInput, string>> = {};
-    if (!Number.isInteger(travelers) || travelers < 1)
-      newErrors.travelers = "Số người phải là số nguyên từ 1 trở lên.";
-
-    if (!destination.trim()) {
-      newErrors.destination = "Vui lòng nhập hoặc chọn điểm đến của bạn.";
-    }
-
-    if (!startDate) {
-      newErrors.startDate = "Vui lòng chọn ngày bắt đầu.";
-    }
-
-    if (!endDate) {
-      newErrors.endDate = "Vui lòng chọn ngày kết thúc.";
-    } else if (startDate && new Date(endDate) < new Date(startDate)) {
-      newErrors.endDate = "Ngày kết thúc không được trước ngày bắt đầu.";
-    }
-
-    if (selectedInterests.length === 0) {
-      newErrors.interests =
-        "Vui lòng chọn ít nhất 1 sở thích để AI tối ưu lịch trình.";
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    setErrors({});
-    if (onSubmit) {
-      onSubmit({
-        destination: destination.trim(),
-        startDate,
-        endDate,
-        budget,
-        travelers,
-        dislikes,
-        interests: INTEREST_OPTIONS.filter((option) =>
-          selectedInterests.includes(option.id),
-        ).map((option) => option.label),
-      });
-    }
-  };
-
-  // Định dạng số tiền VNĐ
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("vi-VN", {
-      style: "currency",
-      currency: "VND",
-    }).format(amount);
-  };
-
+  onSubmit: (input: PlannerInput, suggest: boolean) => Promise<boolean>;
+  initial?: PlannerInput;
+  destination?: string;
+}) {
+  const form = usePlannerForm(onSubmit, initial, destination);
   return (
     <form
-      onSubmit={handleSubmit}
-      className="space-y-8 rounded-2xl border border-slate-200/70 bg-white p-5 shadow-sm hover:shadow-lg hover:shadow-slate-900/5 sm:p-8 lg:p-10 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none"
+      onSubmit={(event) => {
+        event.preventDefault();
+        void form.submit();
+      }}
+      className="card space-y-7 p-5 sm:p-8"
     >
-      <div className="space-y-2">
-        <h2 className="font-semibold text-slate-800 ">
-          Bạn muốn đi đâu tiếp theo?
-        </h2>
-        <p className="text-sm text-slate-500 ">
-          Thông tin được lưu cùng bản nháp để bạn tiếp tục hoàn thiện lịch
-          trình.
-        </p>
-      </div>
-      <fieldset
-        disabled={isLoading}
-        className="grid min-w-0 gap-x-8 gap-y-6 lg:grid-cols-2"
-      >
-        <label className="block text-xs font-medium text-slate-600 ">
-          Điểm đến mong muốn
+      <ErrorNotice message={form.error} />
+      <fieldset disabled={form.busy} className="space-y-7">
+        {!initial && (
+          <div>
+            <p className="mb-4 text-xs font-medium text-slate-600">
+              Một vài nơi để bắt đầu
+            </p>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {destinations.map((item) => (
+                <button
+                  type="button"
+                  key={item.id}
+                  aria-pressed={form.input.destination === item.name}
+                  onClick={() => form.setField("destination", item.name)}
+                  className={`group overflow-hidden rounded-xl border text-left transition-all duration-300 hover:-translate-y-1 hover:shadow-md ${form.input.destination === item.name ? "border-teal-600 ring-2 ring-teal-50" : "border-slate-200"}`}
+                >
+                  <DestinationArt
+                    variant={item.symbol}
+                    className="h-20 w-full transition-transform duration-500 group-hover:scale-105"
+                  />
+                  <span className="block bg-white p-3 text-xs font-medium text-slate-700">
+                    {item.name}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field label="Điểm đến mong muốn">
+            <input
+              required
+              list="planner-destinations"
+              value={form.input.destination}
+              onChange={(event) =>
+                form.setField("destination", event.target.value)
+              }
+              placeholder="Chọn hoặc nhập điểm đến"
+              className="input"
+            />
+            <datalist id="planner-destinations">
+              {destinations.map((item) => (
+                <option key={item.id} value={item.name} />
+              ))}
+            </datalist>
+          </Field>
+          <Field label="Số lượng người">
+            <input
+              required
+              type="number"
+              min={1}
+              max={100}
+              step={1}
+              value={form.input.travelers}
+              onChange={(event) =>
+                form.setField("travelers", Number(event.target.value))
+              }
+              className="input"
+            />
+          </Field>
+          <Field label="Ngày khởi hành">
+            <input
+              required
+              type="date"
+              value={form.input.startDate}
+              onChange={(event) =>
+                form.setField("startDate", event.target.value)
+              }
+              className="input"
+            />
+          </Field>
+          <Field label="Ngày kết thúc">
+            <input
+              required
+              type="date"
+              min={form.input.startDate || undefined}
+              value={form.input.endDate}
+              onChange={(event) => form.setField("endDate", event.target.value)}
+              className="input"
+            />
+          </Field>
+        </div>
+        <div className="rounded-xl border border-slate-200 bg-slate-50/70 p-5">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <label
+              htmlFor="budget-amount"
+              className="text-xs font-medium text-slate-600"
+            >
+              Ngân sách mỗi người
+            </label>
+            <span className="text-sm font-semibold text-teal-800">
+              {money(form.input.budget)}
+            </span>
+          </div>
           <input
-            list="destinations"
-            value={destination}
-            onChange={(event) => setDestination(event.target.value)}
-            className={inputClass}
-            placeholder="Ví dụ: Đà Lạt"
-            required
+            aria-label="Thanh ngân sách"
+            type="range"
+            min={500000}
+            max={30000000}
+            step={500000}
+            value={Math.min(30000000, form.input.budget)}
+            onChange={(event) =>
+              form.setField("budget", Number(event.target.value))
+            }
+            className="my-5 w-full accent-teal-700"
           />
-          <datalist id="destinations">
-            {POPULAR_DESTINATIONS.map((place) => (
-              <option key={place} value={place} />
+          <div className="flex flex-wrap items-center gap-2">
+            {[3000000, 7000000, 15000000].map((amount) => (
+              <button
+                type="button"
+                key={amount}
+                aria-pressed={form.input.budget === amount}
+                onClick={() => form.setField("budget", amount)}
+                className={`rounded-lg border px-3 py-2 text-[11px] transition-all duration-300 hover:-translate-y-0.5 ${form.input.budget === amount ? "border-teal-200 bg-teal-50 text-teal-800" : "border-slate-200 bg-white text-slate-500"}`}
+              >
+                {money(amount)}
+              </button>
             ))}
-          </datalist>
-          {errors.destination && (
-            <span role="alert" className="text-rose-700">
-              {errors.destination}
-            </span>
-          )}
-        </label>
-        <label className="block text-xs font-medium text-slate-600 ">
-          Số lượng người
-          <input
-            type="number"
-            min="1"
-            step="1"
-            value={travelers}
-            onChange={(event) => setTravelers(Number(event.target.value))}
-            className={inputClass}
-            required
-          />
-          {errors.travelers && (
-            <span role="alert" className="text-rose-700">
-              {errors.travelers}
-            </span>
-          )}
-        </label>
-        <label className="block text-xs font-medium text-slate-600 ">
-          Ngày khởi hành
-          <input
-            type="date"
-            value={startDate}
-            onChange={(event) => setStartDate(event.target.value)}
-            className={inputClass}
-            required
-          />
-        </label>
-        <label className="block text-xs font-medium text-slate-600 ">
-          Ngày kết thúc
-          <input
-            type="date"
-            min={startDate || undefined}
-            value={endDate}
-            onChange={(event) => setEndDate(event.target.value)}
-            className={inputClass}
-            required
-          />
-          {errors.endDate && (
-            <span role="alert" className="text-rose-700">
-              {errors.endDate}
-            </span>
-          )}
-        </label>
-        <div className="space-y-5 rounded-2xl border border-slate-200/60 bg-gradient-to-br from-slate-50 to-white p-5 lg:col-span-2 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none hover:border-slate-300">
-          <label
-            className="flex flex-wrap justify-between gap-2 text-sm"
-            htmlFor="budget"
-          >
-            Ngân sách mỗi người{" "}
-            <span className="font-medium text-slate-800 ">
-              {formatCurrency(budget)}
+            <input
+              id="budget-amount"
+              aria-label="Ngân sách mỗi người (VNĐ)"
+              type="number"
+              required
+              min={100000}
+              max={1000000000}
+              step={1000}
+              value={form.input.budget}
+              onChange={(event) =>
+                form.setField("budget", Number(event.target.value))
+              }
+              className="min-h-9 w-36 rounded-lg border border-slate-200 bg-white px-3 text-xs"
+            />
+          </div>
+          <p className="mt-4 text-[11px] text-slate-500">
+            Tổng ngân sách nhóm:{" "}
+            {money(form.input.budget * form.input.travelers)}
+          </p>
+        </div>
+        <details
+          open={Boolean(initial)}
+          className="rounded-xl border border-slate-200 p-5"
+        >
+          <summary className="cursor-pointer text-xs font-medium text-slate-600">
+            Sở thích & điều cần tránh{" "}
+            <span className="font-normal text-slate-400">· tùy chọn</span>
+          </summary>
+          <div className="mt-5 space-y-5">
+            <div className="flex flex-wrap gap-2">
+              {interests.map((interest) => (
+                <button
+                  type="button"
+                  key={interest}
+                  aria-pressed={form.input.interests.includes(interest)}
+                  onClick={() => form.toggleInterest(interest)}
+                  className={`rounded-full border px-3 py-2 text-xs transition-all duration-300 hover:-translate-y-0.5 ${form.input.interests.includes(interest) ? "border-teal-200 bg-teal-50 text-teal-800" : "border-slate-200 text-slate-500"}`}
+                >
+                  {interest}
+                </button>
+              ))}
+            </div>
+            <Field label="Những điều không thích">
+              <textarea
+                value={form.input.dislikes}
+                onChange={(event) =>
+                  form.setField("dislikes", event.target.value)
+                }
+                rows={2}
+                placeholder="Ví dụ: đồ ăn cay, lịch quá dày"
+                className="input"
+              />
+            </Field>
+          </div>
+        </details>
+        {!initial && (
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl bg-teal-50/60 p-4">
+            <input
+              type="checkbox"
+              checked={form.suggest}
+              onChange={(event) => form.setSuggest(event.target.checked)}
+              className="mt-0.5 h-4 w-4 accent-teal-700"
+            />
+            <span>
+              <span className="block text-xs font-medium text-teal-800">
+                Bắt đầu với lịch trình gợi ý
+              </span>
+              <span className="mt-1 block text-[11px] leading-5 text-slate-500">
+                Dùng địa điểm demo phù hợp. Bạn có thể chỉnh lại mọi hoạt động.
+              </span>
             </span>
           </label>
-          <input
-            id="budget"
-            type="range"
-            min="1000000"
-            max="30000000"
-            step="500000"
-            value={budget}
-            onChange={(event) => setBudget(Number(event.target.value))}
-            className="w-full accent-slate-700 transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus:outline-none focus-visible:outline-none focus:ring-4 focus:ring-slate-200/60 focus:border-slate-400"
-          />
-          <div className="flex flex-wrap gap-2">
-            {BUDGET_PRESETS.map((preset) => (
-              <button
-                key={preset.value}
-                type="button"
-                aria-pressed={budget === preset.value}
-                onClick={() => setBudget(preset.value)}
-                className={
-                  "rounded-lg border px-3 py-2 text-xs transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80 disabled:hover:translate-y-0 disabled:hover:shadow-none " +
-                  (budget === preset.value
-                    ? "border-slate-200 bg-slate-50 text-slate-800 "
-                    : "border-slate-100 bg-white text-slate-600 ")
-                }
-              >
-                {preset.label}
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="space-y-3 lg:col-span-2">
-          <h3 className="text-sm text-slate-800 ">
-            Sở thích & phong cách du lịch
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            {INTEREST_OPTIONS.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                aria-pressed={selectedInterests.includes(item.id)}
-                onClick={() => handleToggleInterest(item.id)}
-                className={
-                  "rounded-xl border px-3 py-2.5 text-xs transition-all duration-300 ease-in-out motion-reduce:transition-none motion-reduce:transform-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-slate-400/40 focus-visible:ring-offset-2 active:scale-[0.98] motion-reduce:active:scale-100 hover:opacity-80 disabled:hover:translate-y-0 disabled:hover:shadow-none " +
-                  (selectedInterests.includes(item.id)
-                    ? "border-slate-200 bg-slate-50 text-slate-800 "
-                    : "border-slate-100 text-slate-600 hover:bg-slate-50 ")
-                }
-              >
-                {item.icon} {item.label}
-              </button>
-            ))}
-          </div>
-          {errors.interests && (
-            <p role="alert" className="text-sm text-rose-700">
-              {errors.interests}
-            </p>
+        )}
+        <button disabled={form.busy} className="btn-primary w-full sm:w-auto">
+          {form.busy ? (
+            <Spinner />
+          ) : initial ? (
+            <Calendar className="h-4 w-4" />
+          ) : (
+            <Sparkles className="h-4 w-4" />
           )}
-        </div>
-        <label className="block text-sm lg:col-span-2">
-          Những điều không thích
-          <textarea
-            value={dislikes}
-            onChange={(event) => setDislikes(event.target.value)}
-            className={inputClass}
-            rows={3}
-            placeholder="Ví dụ: quá đông người, đồ ăn cay"
-          />
-        </label>
+          {form.busy
+            ? "Đang chuẩn bị kế hoạch…"
+            : initial
+              ? "Lưu tiêu chí"
+              : "Tạo kế hoạch"}
+          {!form.busy && <ArrowRight className="h-4 w-4" />}
+        </button>
       </fieldset>
-      <button disabled={isLoading} className={buttonClass}>
-        {isLoading ? "Đang lưu…" : "Tạo và lưu bản nháp"}
-      </button>
     </form>
   );
-};
-export default PlannerForm;
+}
