@@ -1,4 +1,4 @@
-import type { Journey, MediaItem } from "../types";
+import type { Journey, MediaMetadata } from "../types";
 import { Clock, MapPin, Image } from "./Icons";
 import { displayDate } from "../services/utils";
 export default function TimelineView({
@@ -6,7 +6,7 @@ export default function TimelineView({
   media,
 }: {
   journey: Journey;
-  media: MediaItem[];
+  media: MediaMetadata[];
 }) {
   return (
     <section

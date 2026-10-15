@@ -19,7 +19,7 @@ function ProtectedLayout() {
     return (
       <Navigate
         to="/login"
-        state={{ from: location.pathname + location.search }}
+        state={{ from: location.pathname + location.search + location.hash }}
         replace
       />
     );
@@ -32,8 +32,8 @@ function ProtectedLayout() {
   );
 }
 export default function App() {
-  const { loading } = useAuth();
-  if (loading)
+  const { isInitializing } = useAuth();
+  if (isInitializing)
     return (
       <div
         role="status"

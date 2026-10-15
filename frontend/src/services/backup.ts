@@ -7,7 +7,8 @@ import type {
   SelectedFile,
 } from "../types";
 import { storage } from "./storage";
-import { makeJourney } from "./journeys";
+import { validateJourney } from "./journeys";
+import { getJourneys, createJourney } from "./journeyService";
 import { createDraft, validateActivity } from "./planner";
 import { delay } from "./utils";
 function dataUrl(blob: Blob): Promise<string> {
@@ -23,7 +24,7 @@ function dataUrl(blob: Blob): Promise<string> {
 }
 export async function exportBackup(ownerId: string) {
   const [journeys, plans] = await Promise.all([
-    storage.journeys(ownerId),
+    getJourneys(),
     storage.itineraries(ownerId),
   ]);
   const backup: LibraryBackup = {
@@ -42,10 +43,10 @@ export async function exportBackup(ownerId: string) {
         },
         createdAt: journey.createdAt,
         media: await Promise.all(
-          (await storage.media(journey.id, ownerId)).map(async (media) => ({
+          journey.media.map(async (media) => ({
             name: media.name,
             mimeType: media.mimeType,
-            dataUrl: await dataUrl(media.blob),
+            dataUrl: await dataUrl(await fetchMedia(media.url)),
           })),
         ),
       })),
@@ -181,10 +182,13 @@ export async function importBackup(file: File, ownerId: string) {
       200 * 1024 * 1024
     )
       throw invalid();
-    const result = makeJourney(input, files, ownerId);
-    result.journey.createdAt = text(item.createdAt);
-    if (!Number.isFinite(Date.parse(result.journey.createdAt))) throw invalid();
-    journeys.push(result);
+    if (files.length)
+      throw new Error(
+        "API chưa hỗ trợ upload media từ bản sao. Chưa nhập dữ liệu nào.",
+      );
+    validateJourney(input, 0);
+    if (!Number.isFinite(Date.parse(text(item.createdAt)))) throw invalid();
+    journeys.push(input);
     await delay(0);
   }
   const plans = (data.itineraries as unknown[]).map((value) => {
@@ -221,6 +225,24 @@ export async function importBackup(file: File, ownerId: string) {
     if (!Number.isFinite(Date.parse(plan.createdAt))) throw invalid();
     return plan;
   });
-  await storage.importLibrary(journeys, plans);
+  let imported = 0;
+  try {
+    for (const input of journeys) {
+      await createJourney({ ...input, media: [] });
+      imported++;
+    }
+    await storage.importPlans(plans);
+  } catch {
+    throw new Error(
+      `Đã nhập ${imported}/${journeys.length} chuyến đi. Nhập bản sao chưa hoàn tất; kiểm tra thư viện trước khi thử lại.`,
+    );
+  }
   return { journeys: journeys.length, plans: plans.length };
+}
+
+async function fetchMedia(url?: string): Promise<Blob> {
+  if (!url) throw new Error("Media chưa có URL máy chủ để xuất bản sao.");
+  const response = await fetch(url, { signal: AbortSignal.timeout(15000) });
+  if (!response.ok) throw new Error("Không thể tải media để xuất bản sao.");
+  return response.blob();
 }

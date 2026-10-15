@@ -1,12 +1,11 @@
 import { useEffect, useState } from "react";
-import type { MediaItem } from "../types";
-import { useBlobUrl } from "../hooks/useMedia";
+import type { MediaMetadata } from "../types";
 import { Image, ArrowLeft, ArrowRight, MapPin } from "./Icons";
 import { EmptyState } from "./ui";
 import Modal from "./Modal";
 import { displayDate } from "../services/utils";
-function MediaTile({ item, onOpen }: { item: MediaItem; onOpen: () => void }) {
-  const url = useBlobUrl(item.blob);
+function MediaTile({ item, onOpen }: { item: MediaMetadata; onOpen: () => void }) {
+  const url = item.url || "";
   return (
     <button
       type="button"
@@ -55,11 +54,11 @@ function MediaTile({ item, onOpen }: { item: MediaItem; onOpen: () => void }) {
     </button>
   );
 }
-export default function GalleryView({ media = [] }: { media?: MediaItem[] }) {
+export default function GalleryView({ media = [] }: { media?: MediaMetadata[] }) {
   const [selectedId, setSelectedId] = useState<string>();
   const active = media.find((item) => item.id === selectedId);
   const activeIndex = media.findIndex((item) => item.id === selectedId);
-  const url = useBlobUrl(active?.blob);
+  const url = active?.url || "";
   useEffect(() => {
     if (!active) return;
     const keyboard = (event: KeyboardEvent) => {

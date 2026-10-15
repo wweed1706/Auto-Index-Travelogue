@@ -27,13 +27,19 @@ export function useAuthForm(register: boolean) {
       ? from
       : "/";
   })();
-  const submit = async (demo = false) => {
+  const submit = async () => {
     if (busy) return;
     setBusy(true);
     setError("");
     try {
-      if (demo) await auth.demo();
-      else if (register) await auth.register({ email, password, name });
+      if (
+        new TextEncoder().encode(password).length > 72 ||
+        password.includes("\0")
+      )
+        throw new Error(
+          "Mật khẩu tối đa 72 byte UTF-8 và không chứa ký tự null.",
+        );
+      if (register) await auth.register({ email, password, name });
       else await auth.login({ email, password });
       navigate(redirectTo, { replace: true });
     } catch (err) {

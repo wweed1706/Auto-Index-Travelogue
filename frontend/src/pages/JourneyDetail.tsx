@@ -26,7 +26,7 @@ const views = [
 export default function JourneyDetail() {
   const { id } = useParams();
   const data = useJourney(id);
-  const media = useJourneyMedia(id);
+  const media = useJourneyMedia(data.journey);
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const tab = params.get("view") || "gallery";

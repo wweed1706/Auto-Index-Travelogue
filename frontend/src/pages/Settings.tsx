@@ -23,13 +23,7 @@ export default function Settings() {
       <ErrorNotice message={data.error} />
       <div className="mt-5 grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-6">
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              void data.save();
-            }}
-            className="card space-y-5 p-6"
-          >
+          <section className="card space-y-5 p-6">
             <h2 className="text-base font-semibold tracking-tight">
               Hồ sơ cá nhân
             </h2>
@@ -37,7 +31,7 @@ export default function Settings() {
               <Field label="Tên hiển thị">
                 <input
                   value={data.name}
-                  onChange={(event) => data.setName(event.target.value)}
+                  readOnly
                   required
                   maxLength={60}
                   autoComplete="name"
@@ -52,11 +46,11 @@ export default function Settings() {
                   className="input"
                 />
               </Field>
-              <button className="btn-primary" disabled={Boolean(data.busy)}>
-                {data.busy === "profile" && <Spinner />}Lưu hồ sơ
-              </button>
+              <p className="text-xs text-slate-500">
+                Hồ sơ hiện chỉ hỗ trợ xem thông tin.
+              </p>
             </fieldset>
-          </form>
+          </section>
           <section className="card p-6">
             <h2 className="text-base font-semibold tracking-tight">
               Bản sao của những ký ức

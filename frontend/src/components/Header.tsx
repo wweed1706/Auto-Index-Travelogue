@@ -49,7 +49,7 @@ export default function Header({ onOpenMenu }: { onOpenMenu: () => void }) {
             className="flex items-center gap-2 rounded-lg p-1.5 transition-all duration-300 hover:bg-slate-50"
           >
             <span className="flex h-8 w-8 items-center justify-center rounded-full border border-sky-100 bg-sky-50 text-xs font-semibold text-sky-800">
-              {user?.name.slice(0, 1).toUpperCase()}
+              {(user?.name || user?.email || "").slice(0, 1).toUpperCase()}
             </span>
             <span className="hidden max-w-32 truncate text-xs text-slate-700 md:block">
               {user?.name}

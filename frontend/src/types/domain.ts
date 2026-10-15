@@ -5,17 +5,8 @@ export interface Coordinates {
 export interface User {
   id: string;
   email: string;
-  name: string;
-  createdAt: string;
-  avatar?: string;
-}
-export interface UserRecord extends User {
-  salt: string;
-  passwordHash: string;
-}
-export interface Session {
-  userId: string;
-  expiresAt: number;
+  name: string | null;
+  avatar: string | null;
 }
 export interface Credentials {
   email: string;
@@ -24,6 +15,7 @@ export interface Credentials {
 }
 export type MediaKind = "image" | "video" | "audio";
 export interface MediaMetadata {
+  url?: string;
   id: string;
   journeyId: string;
   name: string;
@@ -59,6 +51,34 @@ export interface JourneyInput {
   tags: string[];
   coordinates?: Coordinates;
 }
+// JSON API contract; browser Blob and local ownerId are not sent to the server.
+export interface JourneyApiMedia extends Omit<
+  MediaMetadata,
+  "journeyId" | "takenAt" | "location"
+> {
+  url: string;
+  takenAt?: string | null;
+  location?: string | null;
+}
+export interface JourneyCreateRequest extends Omit<
+  JourneyInput,
+  "coordinates"
+> {
+  coordinates?: Coordinates | null;
+  media?: JourneyApiMedia[];
+  summary?: string;
+}
+export type JourneyUpdateRequest = Partial<JourneyCreateRequest>;
+export interface JourneyApiResponse extends JourneyCreateRequest {
+  id: string;
+  user_id: string;
+  media: JourneyApiMedia[];
+  summary: string;
+  coordinates: Coordinates | null;
+  createdAt: string;
+  updatedAt: string;
+}
+export type IJourney = JourneyApiResponse;
 export interface JourneyDraft extends JourneyInput {
   id: string;
   ownerId: string;

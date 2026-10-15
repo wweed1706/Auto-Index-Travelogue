@@ -1,4 +1,11 @@
 # Logs
+# Python
+venv/
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
 logs
 *.log
 npm-debug.log*
@@ -144,6 +151,7 @@ vite.config.ts.timestamp-*
 .vite/
 
 # Agent Rules & Instructions (Local Only)
+/codex.md
 plan.md
 PLAN.md
 .rules
