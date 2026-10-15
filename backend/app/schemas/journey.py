@@ -13,6 +13,15 @@ class Coordinates(BaseModel):
     longitude: float = Field(ge=-180, le=180, allow_inf_nan=False)
 
 
+class Location(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    name: str = Field(min_length=1, max_length=300)
+    lat: float = Field(ge=-90, le=90, allow_inf_nan=False)
+    lng: float = Field(ge=-180, le=180, allow_inf_nan=False)
+    address: str | None = Field(default=None, max_length=500)
+    placeId: str | None = Field(default=None, max_length=300)
+
+
 class MediaItem(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str = Field(min_length=1, max_length=100)
@@ -29,7 +38,7 @@ class MediaItem(BaseModel):
 class JourneyCreate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: Title
-    location: str = Field(min_length=1, max_length=300)
+    location: Location
     date: Date
     notes: str = Field(default="", max_length=20000)
     tags: list[Tag] = Field(default_factory=list, max_length=50)
@@ -37,11 +46,29 @@ class JourneyCreate(BaseModel):
     coordinates: Coordinates | None = None
     summary: str = Field(default="", max_length=5000)
 
+    @model_validator(mode="before")
+    @classmethod
+    def migrate_legacy_location(cls, value: object) -> object:
+        # Document/API cũ lưu tên và tọa độ riêng; chuẩn hóa khi đọc để không làm mất dữ liệu.
+        if isinstance(value, dict) and isinstance(value.get("location"), str):
+            point = value.get("coordinates")
+            latitude = point.get("latitude", 0) if isinstance(point, dict) else 0
+            longitude = point.get("longitude", 0) if isinstance(point, dict) else 0
+            value = {**value, "location": {
+                "name": value["location"], "lat": latitude, "lng": longitude,
+            }}
+        return value
+
+    @model_validator(mode="after")
+    def sync_coordinates(self) -> "JourneyCreate":
+        self.coordinates = Coordinates(latitude=self.location.lat, longitude=self.location.lng)
+        return self
+
 
 class JourneyUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
     title: Title | None = None
-    location: str | None = Field(default=None, min_length=1, max_length=300)
+    location: Location | None = None
     date: Date | None = None
     notes: str | None = Field(default=None, max_length=20000)
     tags: list[Tag] | None = Field(default=None, max_length=50)

@@ -60,6 +60,12 @@ export function openDatabase(): Promise<IDBDatabase> {
         });
         const next: Journey = {
           ...old,
+          location: {
+            name: old.location,
+            lat: 0,
+            lng: 0,
+            address: "Dữ liệu cũ chưa có tọa độ",
+          },
           ownerId: "legacy",
           media: metadata,
           summary: "",

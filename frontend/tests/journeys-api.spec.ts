@@ -7,6 +7,13 @@ import {
 
 const api = "http://127.0.0.1:8002/api";
 const password = "JourneyApiTest2026!";
+const vietnamLocation = {
+  name: "Vietnam",
+  lat: 16.0,
+  lng: 108.0,
+  address: "Vietnam",
+  placeId: "test:vietnam",
+};
 test("upload endpoint requires JWT and validates files", async ({ request }) => {
   const multipart = { file: { name: "test.txt", mimeType: "text/plain", buffer: Buffer.from("test") } };
   expect((await request.post(`${api}/upload`, { multipart })).status()).toBe(401);
@@ -43,6 +50,10 @@ async function session(page: Page, headers: { Authorization: string }) {
 async function fillJourney(page: Page, title: string) {
   await page.getByLabel("Tên chuyến đi", { exact: true }).fill(title);
   await page.getByLabel("Địa điểm", { exact: true }).fill("Đà Lạt");
+  await page.getByRole("option", { name: /Đà Lạt/ }).click();
+  const map = page.getByRole("region", { name: "Bản đồ chọn địa điểm" });
+  await expect(map).toBeVisible();
+  await expect(map.locator(".leaflet-marker-icon")).toBeVisible();
   await page.getByLabel("Ngày chuyến đi", { exact: true }).fill("2026-10-15");
   await page
     .getByRole("button", { name: "+ Thêm ghi chú & vị trí", exact: true })
@@ -58,6 +69,12 @@ test("create and delete via UI persist on server without IndexedDB; failed mutat
   await session(page, headers);
   await page.goto("/upload");
   await fillJourney(page, "Server Journey");
+  await page.getByRole("button", { name: "Xóa vị trí", exact: true }).click();
+  const map = page.getByRole("region", { name: "Bản đồ chọn địa điểm" });
+  await expect(map).toContainText("Nhấp vào bản đồ để chọn vị trí");
+  await expect(map.locator(".leaflet-marker-icon")).toHaveCount(0);
+  await page.getByLabel("Địa điểm", { exact: true }).fill("Đà Lạt");
+  await page.getByRole("option", { name: /Đà Lạt/ }).click();
   await page.route(`${api}/journeys`, (route) =>
     route.fulfill({ status: 503, body: "{}" }),
   );
@@ -89,6 +106,12 @@ test("create and delete via UI persist on server without IndexedDB; failed mutat
   expect(await record.json()).toMatchObject({
     id,
     title: "Server Journey",
+    location: {
+      name: "Đà Lạt",
+      lat: 11.9404,
+      lng: 108.4583,
+      placeId: "mock:dalat",
+    },
     media: [],
   });
   await page.reload();
@@ -158,7 +181,7 @@ test("upload retries preserve files and save returned media; editing remains uns
     headers,
     data: {
       title: "Existing",
-      location: "Vietnam",
+      location: vietnamLocation,
       date: "2026-10-15",
       notes: "Original",
     },
@@ -184,7 +207,11 @@ test("server list loading and retry; another user cannot view journey", async ({
   const other = await account(request);
   const response = await request.post(`${api}/journeys`, {
     headers: owner,
-    data: { title: "Private journey", location: "Vietnam", date: "2026-10-15" },
+    data: {
+      title: "Private journey",
+      location: vietnamLocation,
+      date: "2026-10-15",
+    },
   });
   const { id } = (await response.json()) as { id: string };
   await session(page, other);
@@ -211,6 +238,49 @@ test("server list loading and retry; another user cannot view journey", async ({
   ).toBeVisible();
 });
 
+test("interactive map syncs clicks, marker drags and autocomplete selection", async ({
+  page,
+  request,
+}) => {
+  const headers = await account(request);
+  await session(page, headers);
+  await page.goto("/upload");
+
+  const locationInput = page.getByLabel("Địa điểm", { exact: true });
+  const map = page.getByRole("region", { name: "Bản đồ chọn địa điểm" });
+  const leafletMap = map.locator(".leaflet-container");
+  await expect(leafletMap).toBeVisible();
+
+  await leafletMap.click({ position: { x: 180, y: 90 } });
+  await expect(locationInput).toHaveValue(/^Tọa độ đã chọn:/);
+  const clickedCoordinates = await locationInput.inputValue();
+
+  const marker = map.locator(".leaflet-marker-icon");
+  await expect(marker).toBeVisible();
+  const markerBox = await marker.boundingBox();
+  expect(markerBox).not.toBeNull();
+  if (markerBox) {
+    await page.mouse.move(
+      markerBox.x + markerBox.width / 2,
+      markerBox.y + markerBox.height / 2,
+    );
+    await page.mouse.down();
+    await page.mouse.move(
+      markerBox.x + markerBox.width / 2 + 45,
+      markerBox.y + markerBox.height / 2 + 25,
+      { steps: 5 },
+    );
+    await page.mouse.up();
+  }
+  await expect.poll(() => locationInput.inputValue()).not.toBe(clickedCoordinates);
+  await expect(locationInput).toHaveValue(/^Tọa độ đã chọn:/);
+
+  await locationInput.fill("Đà Lạt");
+  await page.getByRole("option", { name: /Đà Lạt/ }).click();
+  await expect(locationInput).toHaveValue("Đà Lạt");
+  await expect(marker).toBeVisible();
+});
+
 test("list fetches every API page, including journeys older than the first 100", async ({
   page,
   request,
@@ -225,7 +295,7 @@ test("list fetches every API page, including journeys older than the first 100",
             headers,
             data: {
               title: `Paginated ${batch * 10 + offset}`,
-              location: "Vietnam",
+              location: vietnamLocation,
               date: "2026-10-15",
               notes: "Pagination test",
             },

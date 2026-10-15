@@ -63,7 +63,7 @@ export default function JourneyDetail() {
         eyebrow="A STORY TO KEEP"
         title={journey.title}
         description={
-          journey.location +
+          journey.location.name +
           " · " +
           displayDate(journey.date) +
           " · " +
@@ -177,7 +177,7 @@ export default function JourneyDetail() {
                 ? [
                     {
                       id: journey.id,
-                      name: journey.location,
+                      name: journey.location.name,
                       coordinates: journey.coordinates,
                     },
                   ]

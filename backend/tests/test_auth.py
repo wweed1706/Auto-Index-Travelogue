@@ -87,7 +87,10 @@ class AuthIntegrationTests(unittest.TestCase):
     def test_journeys_ownership_and_crud(self):
         owner, token = self.new_account()
         other, other_token = self.new_account()
-        payload = {'title': 'Da Lat', 'location': 'Vietnam', 'date': '2026-10-15',
+        payload = {'title': 'Da Lat',
+                   'location': {'name': 'Da Lat', 'lat': 11.94, 'lng': 108.44,
+                                'address': 'Da Lat, Vietnam', 'placeId': 'mock:dalat'},
+                   'date': '2026-10-15',
                    'media': [{'id': 'photo-1', 'url': 'https://example.com/photo.jpg',
                               'name': 'photo.jpg', 'type': 'image', 'mimeType': 'image/jpeg',
                               'sizeBytes': 123}],
@@ -99,6 +102,8 @@ class AuthIntegrationTests(unittest.TestCase):
         stored = self.database.journeys.find_one({'_id': ObjectId(first['id'])})
         self.assertEqual(stored['user_id'], ObjectId(owner['id']))
         self.assertIsInstance(stored['user_id'], ObjectId)
+        self.assertEqual(stored['location']['placeId'], 'mock:dalat')
+        self.assertEqual(first['coordinates'], {'latitude': 11.94, 'longitude': 108.44})
         self.assertEqual(self.journey_request('GET', '/' + first['id'], token), (200, first))
         for method in ('GET', 'DELETE'):
             self.assertEqual(self.journey_request(method, '/' + first['id'], other_token)[0], 404)
@@ -116,7 +121,9 @@ class AuthIntegrationTests(unittest.TestCase):
 
     def test_journeys_auth_ids_and_input(self):
         _, token = self.new_account()
-        valid = {'title': 'Trip', 'location': 'Vietnam', 'date': '2026-10-15'}
+        valid = {'title': 'Trip',
+                 'location': {'name': 'Vietnam', 'lat': 16.0, 'lng': 108.0},
+                 'date': '2026-10-15'}
         for method, path, data in [('POST', '', valid), ('GET', '', None),
                                    ('GET', '/bad-id', None), ('DELETE', '/bad-id', None)]:
             for bad_token in (None, 'bad-token'):
@@ -127,6 +134,7 @@ class AuthIntegrationTests(unittest.TestCase):
         for extra in ({'user_id': str(ObjectId())}, {'ownerId': str(ObjectId())},
                       {'id': str(ObjectId())}, {'createdAt': '2000-01-01T00:00:00Z'},
                       {'title': '  '}, {'date': 'not-a-date'},
+                      {'location': {'name': 'Invalid', 'lat': 91, 'lng': 0}},
                       {'coordinates': {'latitude': 91, 'longitude': 0}}):
             self.assertEqual(self.journey_request('POST', token=token, data={**valid, **extra})[0], 422)
         for query in ('?skip=-1', '?limit=0', '?limit=101'):

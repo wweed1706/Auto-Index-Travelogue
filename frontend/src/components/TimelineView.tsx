@@ -20,7 +20,7 @@ export default function TimelineView({
       <div className="card mb-6 p-5 sm:p-6">
         <p className="flex items-center gap-2 text-xs text-slate-500">
           <MapPin className="h-4 w-4" />
-          {journey.location}
+          {journey.location.name}
         </p>
         <h2 className="mt-3 text-lg font-semibold tracking-tight">
           {journey.title}

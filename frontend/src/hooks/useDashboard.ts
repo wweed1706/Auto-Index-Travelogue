@@ -33,7 +33,7 @@ export function useDashboard() {
     ),
     placeCount: new Set(
       library.journeys.map((journey) =>
-        journey.location.trim().toLocaleLowerCase("vi"),
+        journey.location.name.trim().toLocaleLowerCase("vi"),
       ),
     ).size,
   };

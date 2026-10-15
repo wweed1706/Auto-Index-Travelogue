@@ -2,6 +2,13 @@ export interface Coordinates {
   latitude: number;
   longitude: number;
 }
+export interface ILocation {
+  name: string;
+  lat: number;
+  lng: number;
+  address?: string;
+  placeId?: string;
+}
 export interface User {
   id: string;
   email: string;
@@ -33,7 +40,7 @@ export interface Journey {
   id: string;
   ownerId: string;
   title: string;
-  location: string;
+  location: ILocation;
   date: string;
   notes: string;
   tags: string[];
@@ -45,7 +52,7 @@ export interface Journey {
 }
 export interface JourneyInput {
   title: string;
-  location: string;
+  location: ILocation | null;
   date: string;
   notes: string;
   tags: string[];
@@ -60,10 +67,8 @@ export interface JourneyApiMedia extends Omit<
   takenAt?: string | null;
   location?: string | null;
 }
-export interface JourneyCreateRequest extends Omit<
-  JourneyInput,
-  "coordinates"
-> {
+export interface JourneyCreateRequest extends Omit<JourneyInput, "location" | "coordinates"> {
+  location: ILocation;
   coordinates?: Coordinates | null;
   media?: JourneyApiMedia[];
   summary?: string;

@@ -2,6 +2,7 @@ import { Link, useParams } from "react-router-dom";
 import { useState } from "react";
 import { useUploadForm } from "../hooks/useUploadForm";
 import MediaDropzone from "../components/MediaDropzone";
+import LocationAutocomplete from "../components/LocationAutocomplete";
 import {
   PageHeading,
   ErrorNotice,
@@ -17,7 +18,6 @@ import {
   CheckCircle,
   ArrowRight,
 } from "../components/Icons";
-import { destinations } from "../services/catalog";
 const stages = [
   { id: "checking", label: "Chuẩn bị media" },
   { id: "analyzing", label: "Sắp xếp ký ức" },
@@ -94,23 +94,11 @@ export default function Upload() {
                     className="input"
                   />
                 </Field>
-                <Field label="Địa điểm">
-                  <input
-                    required
-                    list="journey-destinations"
-                    value={form.input.location}
-                    onChange={(event) =>
-                      form.setField("location", event.target.value)
-                    }
-                    placeholder="Bạn đã đi đâu?"
-                    className="input"
-                  />
-                  <datalist id="journey-destinations">
-                    {destinations.map((destination) => (
-                      <option key={destination.id} value={destination.name} />
-                    ))}
-                  </datalist>
-                </Field>
+                <LocationAutocomplete
+                  value={form.input.location}
+                  onChange={(location) => form.setField("location", location)}
+                  disabled={form.busy}
+                />
                 <Field label="Ngày chuyến đi">
                   <input
                     required
@@ -157,7 +145,7 @@ export default function Upload() {
                 </Field>
                 <details className="rounded-xl bg-slate-50 p-4">
                   <summary className="cursor-pointer text-xs text-slate-600">
-                    Gắn tọa độ thủ công (tùy chọn)
+                    Điều chỉnh tọa độ đã chọn (tùy chọn)
                   </summary>
                   <div className="mt-4 grid gap-4 sm:grid-cols-2">
                     <Field label="Vĩ độ">
@@ -166,18 +154,15 @@ export default function Upload() {
                         step="any"
                         min={-90}
                         max={90}
-                        value={form.input.coordinates?.latitude ?? ""}
+                        disabled={!form.input.location}
+                        value={form.input.location?.lat ?? ""}
                         onChange={(event) =>
-                          form.setField(
-                            "coordinates",
-                            event.target.value
-                              ? {
-                                  latitude: Number(event.target.value),
-                                  longitude:
-                                    form.input.coordinates?.longitude ?? 0,
-                                }
-                              : undefined,
-                          )
+                          form.input.location &&
+                          event.target.value &&
+                          form.setField("location", {
+                            ...form.input.location,
+                            lat: Number(event.target.value),
+                          })
                         }
                         className="input"
                       />
@@ -188,18 +173,15 @@ export default function Upload() {
                         step="any"
                         min={-180}
                         max={180}
-                        value={form.input.coordinates?.longitude ?? ""}
+                        disabled={!form.input.location}
+                        value={form.input.location?.lng ?? ""}
                         onChange={(event) =>
-                          form.setField(
-                            "coordinates",
-                            event.target.value
-                              ? {
-                                  longitude: Number(event.target.value),
-                                  latitude:
-                                    form.input.coordinates?.latitude ?? 0,
-                                }
-                              : undefined,
-                          )
+                          form.input.location &&
+                          event.target.value &&
+                          form.setField("location", {
+                            ...form.input.location,
+                            lng: Number(event.target.value),
+                          })
                         }
                         className="input"
                       />
