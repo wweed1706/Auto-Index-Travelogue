@@ -11,7 +11,7 @@ import type { JourneyInput, JourneyApiMedia, ProcessingStage } from "../types";
 
 const blank = (): JourneyInput => ({
   title: "",
-  location: "",
+  location: null,
   date: localDate(),
   notes: "",
   tags: [],
@@ -49,18 +49,13 @@ export function useUploadForm(editId?: string) {
         date: existing.date,
         notes: existing.notes,
         tags: existing.tags,
-        coordinates: existing.coordinates,
       });
   }, [detail.journey]);
   const setField = <K extends keyof JourneyInput>(
     key: K,
     value: JourneyInput[K],
   ) => {
-    setInput((current) => ({
-      ...current,
-      [key]: value,
-      ...(key === "location" ? { coordinates: undefined } : {}),
-    }));
+    setInput((current) => ({ ...current, [key]: value }));
     setError("");
   };
   const submit = async () => {
@@ -68,14 +63,17 @@ export function useUploadForm(editId?: string) {
     setError("");
     try {
       if (editId) throw new Error(unsupportedEdit);
-      const payload = {
+      const payload: JourneyInput = {
         ...input,
         title: input.title.trim(),
-        location: input.location.trim(),
+        location: input.location
+          ? { ...input.location, name: input.location.name.trim() }
+          : null,
         notes: input.notes.trim(),
         tags: [...new Set(input.tags.map((tag) => tag.trim()).filter(Boolean))],
       };
       validateJourney(payload, media.files.length);
+      if (!payload.location) throw new Error("Vui lòng chọn một địa điểm từ danh sách gợi ý.");
       saving.current = true;
       setBusy(true);
       setStage("checking");
@@ -105,7 +103,15 @@ export function useUploadForm(editId?: string) {
         throw new Error("Đã hủy tải media.");
       uploadController.current = null;
       setStage("saving");
-      const journey = await library.addJourney({ ...payload, media: attachments });
+      const journey = await library.addJourney({
+        ...payload,
+        location: payload.location,
+        coordinates: {
+          latitude: payload.location.lat,
+          longitude: payload.location.lng,
+        },
+        media: attachments,
+      });
       if (mounted.current) {
         setStage("complete");
         notify("Đã lưu một ký ức mới");

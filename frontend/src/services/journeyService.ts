@@ -10,7 +10,10 @@ export function toJourneyView(data: JourneyApiResponse): Journey {
   return {
     ...data,
     ownerId: data.user_id,
-    coordinates: data.coordinates ?? undefined,
+    coordinates: data.coordinates ?? {
+      latitude: data.location.lat,
+      longitude: data.location.lng,
+    },
     media: data.media.map((item) => ({
       ...item,
       journeyId: data.id,

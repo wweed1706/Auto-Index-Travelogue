@@ -1,6 +1,7 @@
 import type {
   Activity,
   Coordinates,
+  ILocation,
   JourneyInput,
   LibraryBackup,
   PlannerInput,
@@ -90,6 +91,26 @@ function coordinates(value: unknown): Coordinates | undefined {
   if (Math.abs(latitude) > 90 || Math.abs(longitude) > 180) throw invalid();
   return { latitude, longitude };
 }
+function location(value: unknown, fallback?: Coordinates): ILocation {
+  if (typeof value === "string") {
+    return {
+      name: value,
+      lat: fallback?.latitude ?? 0,
+      lng: fallback?.longitude ?? 0,
+      address: fallback ? undefined : "Bản sao cũ chưa có tọa độ",
+    };
+  }
+  const item = object(value);
+  const result: ILocation = {
+    name: text(item.name),
+    lat: number(item.lat),
+    lng: number(item.lng),
+  };
+  if (Math.abs(result.lat) > 90 || Math.abs(result.lng) > 180) throw invalid();
+  if (typeof item.address === "string") result.address = item.address;
+  if (typeof item.placeId === "string") result.placeId = item.placeId;
+  return result;
+}
 function parseActivity(value: unknown): Activity {
   const item = object(value);
   const activity: Activity = {
@@ -135,13 +156,14 @@ export async function importBackup(file: File, ownerId: string) {
   for (const value of data.journeys as unknown[]) {
     const item = object(value);
     const values = object(item.input);
+    const legacyCoordinates = coordinates(values.coordinates);
     const input: JourneyInput = {
       title: text(values.title),
-      location: text(values.location),
+      location: location(values.location, legacyCoordinates),
       date: text(values.date),
       notes: text(values.notes),
       tags: strings(values.tags),
-      coordinates: coordinates(values.coordinates),
+      coordinates: legacyCoordinates,
     };
     if (!Array.isArray(item.media) || item.media.length > 40) throw invalid();
     const files: SelectedFile[] = (item.media as unknown[]).map((value) => {
@@ -228,7 +250,8 @@ export async function importBackup(file: File, ownerId: string) {
   let imported = 0;
   try {
     for (const input of journeys) {
-      await createJourney({ ...input, media: [] });
+      if (!input.location) throw invalid();
+      await createJourney({ ...input, location: input.location, media: [] });
       imported++;
     }
     await storage.importPlans(plans);

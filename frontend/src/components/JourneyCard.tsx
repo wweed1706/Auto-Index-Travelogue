@@ -31,7 +31,7 @@ export default function JourneyCard({
             />
           ) : (
             <DestinationArt
-              variant={findDestination(journey.location)?.symbol}
+              variant={findDestination(journey.location.name)?.symbol}
               className="h-full w-full"
             />
           )}
@@ -48,7 +48,7 @@ export default function JourneyCard({
           </h3>
           <p className="mt-2 flex items-center gap-1.5 text-xs text-slate-500">
             <MapPin className="h-3.5 w-3.5 shrink-0" />
-            <span className="truncate">{journey.location}</span>
+            <span className="truncate">{journey.location.name}</span>
           </p>
           <p className="mt-4 line-clamp-2 min-h-10 text-xs leading-5 text-slate-500">
             {journey.notes || "Những khoảnh khắc nhỏ, một câu chuyện riêng."}

@@ -10,7 +10,7 @@ export function validateJourney(input: JourneyInput, count: number) {
   if (
     !input.title.trim() ||
     input.title.trim().length > 150 ||
-    !input.location.trim()
+    !input.location?.name.trim()
   )
     throw new Error("Vui lòng nhập tên chuyến đi và địa điểm.");
   if (!validDate(input.date))
@@ -18,11 +18,11 @@ export function validateJourney(input: JourneyInput, count: number) {
   if (!count && !input.notes.trim())
     throw new Error("Thêm ít nhất một tệp media hoặc ghi chú cho chuyến đi.");
   if (
-    input.coordinates &&
-    (!Number.isFinite(input.coordinates.latitude) ||
-      !Number.isFinite(input.coordinates.longitude) ||
-      Math.abs(input.coordinates.latitude) > 90 ||
-      Math.abs(input.coordinates.longitude) > 180)
+    input.location &&
+    (!Number.isFinite(input.location.lat) ||
+      !Number.isFinite(input.location.lng) ||
+      Math.abs(input.location.lat) > 90 ||
+      Math.abs(input.location.lng) > 180)
   )
     throw new Error("Tọa độ chưa hợp lệ.");
 }
@@ -58,7 +58,8 @@ export const journeyService = {
       const content = normalize(
         [
           journey.title,
-          journey.location,
+          journey.location.name,
+          journey.location.address || "",
           journey.notes,
           ...journey.tags,
           ...journey.media.map((item) => item.name),
@@ -74,7 +75,7 @@ export const journeyService = {
     return {
       journeys: matches,
       summary: matches.length
-        ? `Tìm thấy ${matches.length} chuyến đi với ${matches.reduce((count, journey) => count + journey.media.length, 0)} tệp media. ${[...new Set(matches.map((journey) => journey.location))].slice(0, 3).join(" · ")}.`
+        ? `Tìm thấy ${matches.length} chuyến đi với ${matches.reduce((count, journey) => count + journey.media.length, 0)} tệp media. ${[...new Set(matches.map((journey) => journey.location.name))].slice(0, 3).join(" · ")}.`
         : "Chưa tìm thấy ký ức phù hợp. Thử một địa điểm, chủ đề hoặc khoảng ngày khác.",
     };
   },
