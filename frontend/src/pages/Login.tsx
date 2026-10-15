@@ -7,7 +7,6 @@ import {
   ArrowRight,
   Eye,
   EyeOff,
-  Sparkles,
   CheckCircle,
 } from "../components/Icons";
 import { ErrorNotice, Field, Spinner } from "../components/ui";
@@ -81,6 +80,7 @@ export default function Login({ register = false }: { register?: boolean }) {
               void form.submit();
             }}
             className="space-y-5"
+            aria-busy={form.busy}
           >
             <ErrorNotice message={form.error} />
             <fieldset disabled={form.busy} className="space-y-5">
@@ -110,12 +110,17 @@ export default function Login({ register = false }: { register?: boolean }) {
               </Field>
               <Field
                 label="Mật khẩu"
-                hint={register ? "Ít nhất 8 ký tự." : undefined}
+                hint={
+                  register
+                    ? "Ít nhất 8 ký tự, tối đa 72 byte UTF-8."
+                    : undefined
+                }
               >
                 <span className="relative block">
                   <input
                     required
-                    minLength={8}
+                    minLength={register ? 8 : 1}
+                    maxLength={72}
                     type={showPassword ? "text" : "password"}
                     autoComplete={
                       register ? "new-password" : "current-password"
@@ -141,7 +146,11 @@ export default function Login({ register = false }: { register?: boolean }) {
               </Field>
               <button className="btn-primary w-full" disabled={form.busy}>
                 {form.busy ? <Spinner /> : <ArrowRight className="h-4 w-4" />}
-                {register ? "Tạo tài khoản" : "Đăng nhập"}
+                {form.busy
+                  ? "Đang xử lý…"
+                  : register
+                    ? "Tạo tài khoản"
+                    : "Đăng nhập"}
               </button>
             </fieldset>
           </form>
@@ -155,23 +164,9 @@ export default function Login({ register = false }: { register?: boolean }) {
               {register ? "Đăng nhập" : "Tạo tài khoản"}
             </Link>
           </p>
-          <div className="my-7 flex items-center gap-4 text-[11px] text-slate-400">
-            <span className="h-px flex-1 bg-slate-200" />
-            hoặc trải nghiệm trước
-            <span className="h-px flex-1 bg-slate-200" />
-          </div>
-          <button
-            type="button"
-            className="btn-secondary w-full"
-            disabled={form.busy}
-            onClick={() => void form.submit(true)}
-          >
-            <Sparkles className="h-4 w-4 text-teal-600" />
-            Khám phá bản demo
-          </button>
           <p className="mt-7 text-center text-[11px] leading-5 text-slate-500">
-            Phiên bản demo cục bộ. Tài khoản và dữ liệu chỉ được lưu trong trình
-            duyệt này.
+            Tài khoản được xác thực qua máy chủ. Chuyến đi và kế hoạch hiện vẫn
+            được lưu trên thiết bị này.
           </p>
         </div>
       </section>

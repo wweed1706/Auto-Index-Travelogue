@@ -6,11 +6,11 @@ import { storage } from "../services/storage";
 import { exportBackup, importBackup } from "../services/backup";
 import { downloadBlob, localDate, messageOf } from "../services/utils";
 import type { StorageInfo } from "../types";
+import { getJourneys, deleteJourney } from "../services/journeyService";
 export function useSettings() {
   const auth = useAuth();
   const library = useLibrary();
   const { notify } = useToast();
-  const [name, setName] = useState(auth.user?.name || "");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState("");
   const [usage, setUsage] = useState<StorageInfo>();
@@ -42,11 +42,6 @@ export function useSettings() {
       setBusy("");
     }
   };
-  const save = () =>
-    run("profile", async () => {
-      await auth.updateName(name);
-      notify("Đã cập nhật hồ sơ");
-    });
   const exportData = () =>
     run("export", async () => {
       const blob = await exportBackup(library.ownerId);
@@ -55,27 +50,34 @@ export function useSettings() {
     });
   const importData = (file: File) =>
     run("import", async () => {
-      const result = await importBackup(file, library.ownerId);
-      await library.reload();
+      let result;
+      try {
+        result = await importBackup(file, library.ownerId);
+      } finally {
+        await library.reload();
+      }
       notify(
         `Đã nhập ${result.journeys} chuyến đi và ${result.plans} kế hoạch`,
       );
     });
   const clearData = () =>
     run("clear", async () => {
-      await storage.clearLibrary(library.ownerId);
-      await library.reload();
+      try {
+        const journeys = await getJourneys();
+        for (const journey of journeys) await deleteJourney(journey.id);
+        await storage.clearItineraries(library.ownerId);
+      } finally {
+        await library.reload();
+      }
       notify("Đã xóa dữ liệu trong không gian này");
     });
   return {
-    name,
-    setName,
+    name: auth.user?.name || "",
     user: auth.user,
     logout: auth.logout,
     error,
     busy,
     usage,
-    save,
     exportData,
     importData,
     clearData,

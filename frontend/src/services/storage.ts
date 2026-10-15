@@ -1,15 +1,5 @@
-import type {
-  Journey,
-  Itinerary,
-  MediaItem,
-  UserRecord,
-  UploadDraftRecord,
-} from "../types";
-import type {
-  DeletedJourney,
-  LegacyJourney,
-  LegacyItinerary,
-} from "../types/legacy";
+import type { Journey, Itinerary, MediaItem } from "../types";
+import type { LegacyJourney, LegacyItinerary } from "../types/legacy";
 
 type StoreName = "journeys" | "itineraries" | "media" | "users" | "drafts";
 const accessError = () =>
@@ -180,104 +170,12 @@ function owned<T>(name: "journeys" | "itineraries", ownerId: string) {
   );
 }
 export const storage = {
-  importLibrary: (
-    journeys: { journey: Journey; media: MediaItem[] }[],
-    plans: Itinerary[],
-  ) =>
-    transact<void>(["journeys", "media", "itineraries"], "readwrite", (get) => {
-      journeys.forEach(({ journey, media }) => {
-        get("journeys").put(journey);
-        media.forEach((item) => get("media").put(item));
-      });
+  importPlans: (plans: Itinerary[]) =>
+    transact<void>(["itineraries"], "readwrite", (get) => {
       plans.forEach((plan) => get("itineraries").put(plan));
       return () => undefined;
     }),
-  journeys: (ownerId: string) => owned<Journey>("journeys", ownerId),
   itineraries: (ownerId: string) => owned<Itinerary>("itineraries", ownerId),
-  userByEmail: (email: string) =>
-    single<UserRecord | undefined>("users", "readonly", (store) =>
-      store.index("email").get(email),
-    ),
-  userById: (id: string) =>
-    single<UserRecord | undefined>("users", "readonly", (store) =>
-      store.get(id),
-    ),
-  userCount: () =>
-    single<number>("users", "readonly", (store) => store.count()),
-  saveUser: (user: UserRecord) =>
-    single<IDBValidKey>("users", "readwrite", (store) => store.put(user)),
-  addUser: (user: UserRecord) =>
-    single<IDBValidKey>("users", "readwrite", (store) => store.add(user)),
-  draft: (ownerId: string) =>
-    single<UploadDraftRecord | undefined>("drafts", "readonly", (store) =>
-      store.get(ownerId),
-    ),
-  saveDraft: (draft: UploadDraftRecord) =>
-    single<IDBValidKey>("drafts", "readwrite", (store) => store.put(draft)),
-  deleteDraft: (ownerId: string) =>
-    single<undefined>("drafts", "readwrite", (store) => store.delete(ownerId)),
-  media: (journeyId: string, ownerId: string) =>
-    transact<MediaItem[]>(["journeys", "media"], "readonly", (get) => {
-      let result: MediaItem[] = [];
-      const journey = get("journeys").get(journeyId) as IDBRequest<
-        Journey | undefined
-      >;
-      journey.onsuccess = () => {
-        if (journey.result?.ownerId !== ownerId) return;
-        const media = get("media")
-          .index("journeyId")
-          .getAll(journeyId) as IDBRequest<MediaItem[]>;
-        media.onsuccess = () => {
-          result = media.result;
-        };
-      };
-      return () => result;
-    }),
-  mediaItem: (id: string, ownerId: string) =>
-    transact<MediaItem | undefined>(
-      ["journeys", "media"],
-      "readonly",
-      (get) => {
-        let result: MediaItem | undefined;
-        const media = get("media").get(id) as IDBRequest<MediaItem | undefined>;
-        media.onsuccess = () => {
-          if (!media.result) return;
-          const journey = get("journeys").get(
-            media.result.journeyId,
-          ) as IDBRequest<Journey | undefined>;
-          journey.onsuccess = () => {
-            if (journey.result?.ownerId === ownerId) result = media.result;
-          };
-        };
-        return () => result;
-      },
-    ),
-  saveJourney: (
-    journey: Journey,
-    media: MediaItem[] = [],
-    removedIds: string[] = [],
-    clearDraft = false,
-  ) =>
-    transact<Journey>(
-      ["journeys", "media", "drafts"],
-      "readwrite",
-      (get, tx) => {
-        const previous = get("journeys").get(journey.id) as IDBRequest<
-          Journey | undefined
-        >;
-        previous.onsuccess = () => {
-          if (previous.result && previous.result.ownerId !== journey.ownerId) {
-            tx.abort();
-            return;
-          }
-          get("journeys").put(journey);
-          media.forEach((item) => get("media").put(item));
-          removedIds.forEach((id) => get("media").delete(id));
-          if (clearDraft) get("drafts").delete(journey.ownerId);
-        };
-        return () => journey;
-      },
-    ),
   saveItinerary: (itinerary: Itinerary) =>
     transact<Itinerary>(["itineraries"], "readwrite", (get, tx) => {
       const previous = get("itineraries").get(itinerary.id) as IDBRequest<
@@ -319,28 +217,6 @@ export const storage = {
       };
       return () => result;
     }),
-  deleteJourney: (id: string, ownerId: string) =>
-    transact<DeletedJourney>(["journeys", "media"], "readwrite", (get, tx) => {
-      let result: DeletedJourney;
-      const journey = get("journeys").get(id) as IDBRequest<
-        Journey | undefined
-      >;
-      journey.onsuccess = () => {
-        if (!journey.result || journey.result.ownerId !== ownerId) {
-          tx.abort();
-          return;
-        }
-        const media = get("media").index("journeyId").getAll(id) as IDBRequest<
-          MediaItem[]
-        >;
-        media.onsuccess = () => {
-          result = { journey: journey.result!, media: media.result };
-          get("journeys").delete(id);
-          media.result.forEach((item) => get("media").delete(item.id));
-        };
-      };
-      return () => result;
-    }),
   deleteItinerary: (id: string, ownerId: string) =>
     transact<Itinerary>(["itineraries"], "readwrite", (get, tx) => {
       let result: Itinerary;
@@ -357,47 +233,16 @@ export const storage = {
       };
       return () => result;
     }),
-  claimLegacy: (ownerId: string) =>
-    transact<void>(["journeys", "itineraries"], "readwrite", (get) => {
-      for (const name of ["journeys", "itineraries"] as const) {
-        const request = get(name).index("ownerId").openCursor("legacy");
-        request.onsuccess = () => {
-          const cursor = request.result;
-          if (!cursor) return;
-          cursor.update({ ...(cursor.value as Journey | Itinerary), ownerId });
+  clearItineraries: (ownerId: string) =>
+    transact<void>(["itineraries"], "readwrite", (get) => {
+      const request = get("itineraries").index("ownerId").openCursor(ownerId);
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (cursor) {
+          cursor.delete();
           cursor.continue();
-        };
-      }
+        }
+      };
       return () => undefined;
     }),
-  clearLibrary: (ownerId: string) =>
-    transact<void>(
-      ["journeys", "itineraries", "media", "drafts"],
-      "readwrite",
-      (get) => {
-        for (const name of ["journeys", "itineraries"] as const) {
-          const request = get(name).index("ownerId").openCursor(ownerId);
-          request.onsuccess = () => {
-            const cursor = request.result;
-            if (!cursor) return;
-            if (name === "journeys") {
-              const media = get("media")
-                .index("journeyId")
-                .openCursor(cursor.primaryKey);
-              media.onsuccess = () => {
-                const item = media.result;
-                if (item) {
-                  item.delete();
-                  item.continue();
-                }
-              };
-            }
-            cursor.delete();
-            cursor.continue();
-          };
-        }
-        get("drafts").delete(ownerId);
-        return () => undefined;
-      },
-    ),
 };

@@ -9,19 +9,22 @@ import {
 } from "react";
 import { storage } from "../services/storage";
 import { delay, messageOf } from "../services/utils";
-import type { Journey, Itinerary, MediaItem } from "../types";
-import type { DeletedJourney } from "../types/legacy";
+import type { Journey, Itinerary, JourneyCreateRequest } from "../types";
+import * as journeyApi from "../services/journeyService";
 interface LibraryState {
   ownerId: string;
   journeys: Journey[];
   itineraries: Itinerary[];
   loading: boolean;
+  isLoading: boolean;
   error: string;
+  itineraryError: string;
   reload: (silent?: boolean) => Promise<void>;
   commitJourney: (journey: Journey) => void;
-  saveJourney: (journey: Journey, media?: MediaItem[]) => Promise<void>;
-  deleteJourney: (id: string) => Promise<DeletedJourney>;
-  restoreJourney: (deleted: DeletedJourney) => Promise<void>;
+  fetchJourneys: () => Promise<void>;
+  addJourney: (data: JourneyCreateRequest) => Promise<Journey>;
+  removeJourney: (id: string) => Promise<void>;
+  deleteJourney: (id: string) => Promise<void>;
   saveItinerary: (plan: Itinerary) => Promise<void>;
   mutateItinerary: (
     id: string,
@@ -41,6 +44,7 @@ export function LibraryProvider({
   const [itineraries, setItineraries] = useState<Itinerary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [itineraryError, setItineraryError] = useState("");
   const generation = useRef(0);
   const channel = useRef<BroadcastChannel | null>(null);
   const broadcast = useCallback(
@@ -53,17 +57,21 @@ export function LibraryProvider({
       if (!silent) setLoading(true);
       setError("");
       try {
-        const [nextJourneys, nextPlans] = await Promise.all([
-          storage.journeys(ownerId),
+        const [journeyResult, planResult] = await Promise.allSettled([
+          journeyApi.getJourneys(),
           storage.itineraries(ownerId),
         ]);
         if (request !== generation.current) return;
-        setJourneys(
-          nextJourneys.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
-        );
-        setItineraries(
-          nextPlans.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)),
-        );
+        if (planResult.status === "fulfilled") {
+          setItineraries(
+            planResult.value.sort((a, b) =>
+              b.updatedAt.localeCompare(a.updatedAt),
+            ),
+          );
+          setItineraryError("");
+        } else setItineraryError(messageOf(planResult.reason));
+        if (journeyResult.status === "rejected") throw journeyResult.reason;
+        setJourneys(journeyResult.value);
       } catch (err) {
         if (request === generation.current) setError(messageOf(err));
       } finally {
@@ -93,6 +101,7 @@ export function LibraryProvider({
     (journey: Journey) => {
       generation.current++;
       setLoading(false);
+      setError("");
       setJourneys((items) => [
         journey,
         ...items.filter((item) => item.id !== journey.id),
@@ -110,21 +119,19 @@ export function LibraryProvider({
     ]);
     broadcast();
   };
-  const saveJourney = async (journey: Journey, media: MediaItem[] = []) => {
-    await storage.saveJourney(journey, media);
+  const addJourney = async (data: JourneyCreateRequest) => {
+    const journey = await journeyApi.createJourney(data);
     commitJourney(journey);
+    void reload(true);
+    return journey;
   };
   const deleteJourney = async (id: string) => {
-    await delay(250);
-    const result = await storage.deleteJourney(id, ownerId);
+    await journeyApi.deleteJourney(id);
     generation.current++;
     setLoading(false);
     setJourneys((items) => items.filter((item) => item.id !== id));
     broadcast();
-    return result;
-  };
-  const restoreJourney = async (deleted: DeletedJourney) => {
-    await saveJourney(deleted.journey, deleted.media);
+    void reload(true);
   };
   const saveItinerary = async (plan: Itinerary) => {
     await storage.saveItinerary(plan);
@@ -155,12 +162,15 @@ export function LibraryProvider({
         journeys,
         itineraries,
         loading,
+        isLoading: loading,
         error,
+        itineraryError,
         reload,
         commitJourney,
-        saveJourney,
+        fetchJourneys: reload,
+        addJourney,
+        removeJourney: deleteJourney,
         deleteJourney,
-        restoreJourney,
         saveItinerary,
         mutateItinerary,
         deleteItinerary,

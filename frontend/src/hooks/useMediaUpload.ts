@@ -24,7 +24,7 @@ export function useMediaUpload() {
     const rejected: string[] = [];
     for (const file of Array.from(incoming)) {
       if (
-        !/^(image\/(jpeg|png|webp|gif)|video\/(mp4|webm)|audio\/(mpeg|mp3|wav|x-wav|ogg|webm|mp4|aac))$/.test(
+        !/^(image\/(jpeg|png|webp|gif)|video\/(mp4|webm))$/.test(
           file.type,
         ) ||
         file.size > 50 * 1024 * 1024 ||

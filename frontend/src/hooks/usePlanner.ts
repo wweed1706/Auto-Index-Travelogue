@@ -162,6 +162,7 @@ export function usePlanner(id?: string) {
     );
   return {
     ...library,
+    error: library.itineraryError,
     plan,
     selectedDay,
     day,
